@@ -122,7 +122,8 @@ while running:
         pygame.draw.rect(screen, (0, 0, 0), (58, 54, 500, 680), border_radius=5)
         pygame.draw.rect(screen, (217, 217, 217), (29 * 2, 27 * 2, 250 * 2, 10.85 * 2),
                          border_top_left_radius=5, border_top_right_radius=5)
-        game._TimeBar()
+        if game._TimeBar():
+            is_alive = False
         # pygame.draw.rect(screen, color, (29 * 2, 27 * 2, 250 * 2, 10.85 * 2),
         #                  border_top_left_radius=5, border_top_right_radius=5)
         pygame.draw.rect(screen, (103, 111, 147), (114, 98, 388, 208), border_radius=5)
