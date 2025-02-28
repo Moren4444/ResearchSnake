@@ -1,3 +1,5 @@
+import time
+
 import pygame
 from snakes import Game
 from Resouce import Buttons
@@ -7,7 +9,7 @@ pygame.init()
 running = True
 fullscreen = True
 color = (16, 196, 109)
-body_count = 8
+body_count = 3
 
 settings = pygame.image.load("assets/settings.png")
 settings_size = pygame.transform.scale(settings, (128, 128))
@@ -16,7 +18,7 @@ settings_rect = settings_size.get_rect(topleft=(1150, 13))
 screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
 clock = pygame.time.Clock()
 is_alive = True
-game = Game(800, 412, screen, 1)
+game = Game(800, 412, screen, 1, 10000)
 option = Buttons(screen)
 open_setting = False
 
@@ -55,6 +57,7 @@ Restart_rect = Restart_s.get_rect(topleft=(304.07 * 2, 294.8 * 2))
 questions = 1
 list_Question = Retrieve_Question(1, "Question")
 Option_title = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
+answer = Retrieve_Question(1, "CorrectAnswer")
 hit = False
 while running:
     screen.fill((50, 50, 50))
@@ -89,7 +92,8 @@ while running:
                 print("Quit")
                 running = False
             elif Restart_rect.collidepoint(event.pos):
-                game = Game(800, 412, screen, 1)  # Reinitialize the game
+                body_count = 3
+                game = Game(800, 412, screen, 1, 10000)  # Reinitialize the game
                 is_alive = True
                 open_setting = False
                 questions = 1
@@ -118,8 +122,9 @@ while running:
         pygame.draw.rect(screen, (0, 0, 0), (58, 54, 500, 680), border_radius=5)
         pygame.draw.rect(screen, (217, 217, 217), (29 * 2, 27 * 2, 250 * 2, 10.85 * 2),
                          border_top_left_radius=5, border_top_right_radius=5)
-        pygame.draw.rect(screen, color, (29 * 2, 27 * 2, 250 * 2, 10.85 * 2),
-                         border_top_left_radius=5, border_top_right_radius=5)
+        game._TimeBar()
+        # pygame.draw.rect(screen, color, (29 * 2, 27 * 2, 250 * 2, 10.85 * 2),
+        #                  border_top_left_radius=5, border_top_right_radius=5)
         pygame.draw.rect(screen, (103, 111, 147), (114, 98, 388, 208), border_radius=5)
         pygame.draw.rect(screen, (255, 141, 28), (60 * 2, 174 * 2, 211 * 2, 30 * 2), border_radius=5)
         pygame.draw.rect(screen, (28, 69, 255), (60 * 2, 221 * 2, 211 * 2, 30 * 2), border_radius=5)
@@ -140,42 +145,47 @@ while running:
             else:
                 hit = option.check_collision(position)  # Check for collisions with buttons
 
-        if not open_setting:
-            game._update(1, body_count, is_alive)
-        if hit:
-            if questions >= 10:
-                screen.blit(text, (75, 100))
-            else:
-                screen.blit(text, (80, 100))
-            questions += 1
-        else:
-            if questions >= 10:
-                screen.blit(text, (75, 100))
-            else:
-                screen.blit(text, (80, 100))
-        game._draw(1)
-
-        screen.blit(A_selection, (85, 363))
-        screen.blit(B_selection, (85, 456))
-        screen.blit(C_selection, (85, 551))
-        screen.blit(D_selection, (85, 645))
-
         try:
+            if hit:
+                if questions >= 10:
+                    screen.blit(text, (75, 100))
+                else:
+                    screen.blit(text, (80, 100))
+                questions += 1
+                game.time_bar_start = pygame.time.get_ticks()
+                if answer[questions - 1] == hit:
+                    body_count += 1
+            else:
+                if questions >= 10:
+                    screen.blit(text, (75, 100))
+                else:
+                    screen.blit(text, (80, 100))
+            game._draw(1)
+
+            screen.blit(A_selection, (85, 363))
+            screen.blit(B_selection, (85, 456))
+            screen.blit(C_selection, (85, 551))
+            screen.blit(D_selection, (85, 645))
+
             Question_title = game._animated_text(list_Question[questions-1],
                                                  font, 106, 98, 20, 388)
-            game._animated_text(Option_title[questions-1][0],
-                                font, 125, 353, 5, 422)
-            game._animated_text(Option_title[questions-1][1],
-                                font, 125, 444, 5, 422)
-            game._animated_text(Option_title[questions-1][2],
-                                font, 125, 538, 5, 422)
-            done = game._animated_text(Option_title[questions-1][3],
-                                       font, 125, 632, 5, 422)
+            if Question_title:
+                game._animated_text(Option_title[questions-1][0],
+                                    font, 125, 353, 5, 422)
+                game._animated_text(Option_title[questions-1][1],
+                                    font, 125, 444, 5, 422)
+                game._animated_text(Option_title[questions-1][2],
+                                    font, 125, 538, 5, 422)
+                done = game._animated_text(Option_title[questions-1][3],
+                                           font, 125, 632, 5, 422)
 
-            option._draw()
+                if not open_setting and done:
+                    game._update(1, body_count, is_alive)
 
         except IndexError:
             open_setting = True
+        option._draw()
+
         if open_setting:
             screen.blit(overlay, (0, 0))
             pygame.draw.rect(screen, (47, 47, 47), (216.47 * 2, 67.88 * 2, 197.75 * 2, 264.24 * 2))
