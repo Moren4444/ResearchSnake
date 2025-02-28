@@ -86,7 +86,7 @@ class Buttons:
             if position[0] == button["x"] and position[1] == button["y"]:
                 print(button["name"])  # Print the button's name (A, B, C, or D)
                 self.options.reset_button_positions()  # Reset button positions
-                return True
+                return button["name"]
         return False
 
 
