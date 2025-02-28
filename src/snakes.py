@@ -173,13 +173,36 @@ class Snake:
 
 
 class Game:
-    def __init__(self, x, y, screen, scale):
+    def __init__(self, x, y, screen, scale, duration):
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.snake = Snake(x, y, scale)
+        self.time_bar_start = pygame.time.get_ticks()
+        self.time_bar_duration = duration  # 10 seconds in milliseconds
+        self.full_width = 250 * 2  # Initial width from your code
 
     def _getPosition(self):
         return self.snake.getPosition()
+
+    def _TimeBar(self):
+        current_time = pygame.time.get_ticks()
+        elapsed = current_time - self.time_bar_start
+        remaining = max(0, self.time_bar_duration - elapsed)
+        width = (remaining / self.time_bar_duration) * self.full_width
+
+        # Optional: Change color based on remaining time
+        if remaining < 2000:  # Last 2 seconds
+            color = (255, 0, 0)  # Red
+        else:
+            color = (16, 196, 109)  # Original color
+
+        pygame.draw.rect(self.screen, color,
+                         (29 * 2, 27 * 2, width, 10.85 * 2),
+                         border_top_left_radius=5,
+                         border_top_right_radius=5)
+
+        # Return whether time has run out
+        return remaining <= 0
 
     def _animated_text(self, sentence, font, x, y, space_between, max_width, animation_speed=50):
         # Create unique identifier for each text instance
