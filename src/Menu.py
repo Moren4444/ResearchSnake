@@ -1,0 +1,150 @@
+import pygame
+from database import Chapter_Quiz
+from Result import wrap_text_word_based
+
+pygame.init()
+running = True
+screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
+close = pygame.image.load("assets/close.png")
+close_resize = pygame.transform.scale(close, (30, 30))
+close_rect = close_resize.get_rect(topleft=(1200, 55))
+scale = 3.193648
+testing = {}
+list_of_quiz = []
+list_of_levels = []
+
+font = pygame.font.Font("assets/PeaberryBase.ttf", 30)
+fonts = pygame.font.Font("assets/PeaberryBase.ttf", 40)
+sec_font = pygame.font.Font("assets/PeaberryBase.ttf", 25)
+
+chapter_quizzes = {}
+chapter, quiz = Chapter_Quiz()
+all_testing_data = {}
+length_of_quiz = []  # Now stores (length, y_offset) for each CHAPTER (not quiz)
+display_answer = [""]
+char_index_answer = [0]
+description_title = sec_font.render("Description: ", True, (0, 0, 0))
+play = font.render("Play", True, (0, 0, 0))
+# Group quizzes by chapter
+for i in range(len(quiz)):
+    chapter_id = int(quiz[i][4])
+    if chapter_id not in chapter_quizzes:
+        chapter_quizzes[chapter_id] = []
+    chapter_quizzes[chapter_id].append(quiz[i])
+
+# Process each chapter
+for chapter_index, (chapter_id, quizzes) in enumerate(chapter_quizzes.items()):
+    print(f"Chapter {chapter_id}")
+
+    y_offset = 150 * chapter_index  # +150 y-offset per chapter
+
+    # Calculate length ONCE PER CHAPTER (based on number of quizzes)
+    num_quizzes = len(quizzes) - 1
+    length = (59 * scale) + (25 * num_quizzes * scale)  # Adjust formula as needed
+
+    # Store ONE entry per chapter
+    length_of_quiz.append((length, y_offset))  # Now 1 entry per chapter
+
+    # Process quizzes (for rects and levels)
+    for index, j in enumerate(quizzes):
+        rect = pygame.Rect(
+            (53 * scale) + (30 * index * scale),
+            (45 * scale) + y_offset,
+            18 * scale,
+            18 * scale
+        )
+        levels = (
+            (59 * scale) + (30 * index * scale),
+            (50 * scale) + y_offset
+        )
+        list_of_levels.append(levels)
+        list_of_quiz.append(rect)
+        all_testing_data[(f"Chapter {chapter_id}", j[0])] = j[1]
+
+print(quiz)
+quiz_level = 0
+# Main loop
+menu_open = False
+
+# Animation variables
+char_index_title = 0
+char_index_description = 0
+last_update_time = pygame.time.get_ticks()
+animation_speed = 50  # Milliseconds per character
+
+while running:
+    screen.fill((50, 50, 50))
+
+    # Event handling
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+            for i, rect in enumerate(list_of_quiz):
+                if rect.collidepoint(mouse_pos):  # Check if mouse click is inside the rect
+                    print(f"Quiz {i + 1} clicked!")  # Perform action for clicked quiz
+                    quiz_level = i
+                    menu_open = True
+                    char_index_title = 0  # Reset animation for title
+                    char_index_description = 0  # Reset animation for description
+                    print(quiz[quiz_level])
+                    # Example: Start the quiz, display a message, etc.
+            if close_rect.collidepoint(event.pos):
+                menu_open = False
+
+    if menu_open:
+        level_click = quiz[quiz_level]
+        pygame.draw.rect(screen, (110, 110, 110), (800, 50, 445, 650), border_radius=5)
+        screen.blit(close_resize, (1200, 55))
+        # Animate the title
+        title = level_click[1][:char_index_title]
+        title_wrapped = wrap_text_word_based(title, 400, font)
+        for line in title_wrapped:
+            title_surface = font.render(line, True, (0, 0, 0))
+            screen.blit(title_surface, (850, 100))
+
+        # Animate the description
+        description = level_click[2][:char_index_description]
+        description_wrapped = wrap_text_word_based(description, 400, font)
+        screen.blit(description_title, (850, 200))
+        for i, line in enumerate(description_wrapped):
+            description_surface = font.render(line, True, (0, 0, 0))
+            screen.blit(description_surface, (850, 250 + i * 40))  # Adjust y-offset for each line
+
+        # Update animation progress
+        current_time = pygame.time.get_ticks()
+        if current_time - last_update_time > animation_speed:
+            last_update_time = current_time
+            if char_index_title < len(level_click[1]):
+                char_index_title += 1
+            if char_index_description < len(level_click[2]):
+                char_index_description += 1
+        pygame.draw.rect(screen, (150, 188, 219), (935, 550, 210, 100),  border_radius=5)
+        screen.blit(play, (1000, 590))
+
+    # Draw ONE background rectangle per chapter
+    for length_value, y_offset in length_of_quiz:
+        pygame.draw.rect(screen, (105, 105, 105),
+                         (40 * scale, 42 * scale + y_offset,  # X, Y
+                          length_value, 24 * scale),  # Width, Height
+                         border_radius=5
+                         )
+
+    # Render quiz blocks
+    total_quizzes_rendered = 0
+    for keys, value in chapter_quizzes.items():
+        y_offset = 150 * (keys - 1)  # +150 y-offset per chapter
+        chapter_name = font.render(f"Chapter {keys}", True, (255, 255, 255))
+        screen.blit(chapter_name, (100, 100 + y_offset))  # Render chapter name with y-offset
+
+        for index, _ in enumerate(value):
+            correct_index = total_quizzes_rendered + index
+            level = font.render(f"{index + 1}", True, (0, 0, 0))
+            pygame.draw.rect(screen, (246, 208, 17), list_of_quiz[correct_index], border_radius=5)
+            screen.blit(level, list_of_levels[correct_index])
+        total_quizzes_rendered += len(value)
+
+    pygame.display.update()
+
+pygame.quit()
