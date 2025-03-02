@@ -6,13 +6,16 @@ pygame.init()
 running = True
 screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
 close = pygame.image.load("assets/close.png")
+lock = pygame.image.load("assets/locked.png")
+lock_resize = pygame.transform.scale(lock, (140, 140))
+
 close_resize = pygame.transform.scale(close, (30, 30))
 close_rect = close_resize.get_rect(topleft=(1200, 55))
 scale = 3.193648
 testing = {}
 list_of_quiz = []
 list_of_levels = []
-
+player_level = 3
 font = pygame.font.Font("assets/PeaberryBase.ttf", 30)
 fonts = pygame.font.Font("assets/PeaberryBase.ttf", 40)
 sec_font = pygame.font.Font("assets/PeaberryBase.ttf", 25)
@@ -96,6 +99,13 @@ while running:
                 # Handle quiz clicks only when the overlay is not active
                 for i, rect in enumerate(list_of_quiz):
                     if rect.collidepoint(mouse_pos):
+                        # Check if the quiz is locked
+                        if (i + 1) > player_level:
+                            alert = True  # Show a "Quiz is locked" message
+                            print("Quiz is locked")
+                            break  # Skip further processing
+
+                        # Existing logic for available questions
                         print(f"Quiz {i + 1} clicked!")
                         quiz_level = i
                         print(quiz[quiz_level])
@@ -109,7 +119,6 @@ while running:
                         else:
                             menu_open = False
                             alert = True
-                # Handle close button
                 if close_rect.collidepoint(mouse_pos):
                     menu_open = False
             # if overlay_rect.collidepoint(event.pos):
@@ -153,23 +162,30 @@ while running:
                          border_radius=5
                          )
 
-    # Render quiz blocks
+    # Inside the quiz rendering loop (where quizzes are drawn)
     total_quizzes_rendered = 0
     for keys, value in chapter_quizzes.items():
         y_offset = 150 * (keys - 1)  # +150 y-offset per chapter
         chapter_name = font.render(f"Chapter {keys}", True, (255, 255, 255))
-        screen.blit(chapter_name, (100, 100 + y_offset))  # Render chapter name with y-offset
+        screen.blit(chapter_name, (100, 100 + y_offset))
 
         for index, _ in enumerate(value):
             correct_index = total_quizzes_rendered + index
             level = font.render(f"{index + 1}", True, (0, 0, 0))
             pygame.draw.rect(screen, (246, 208, 17), list_of_quiz[correct_index], border_radius=5)
             screen.blit(level, list_of_levels[correct_index])
+
+            # Add lock icon if the quiz is beyond the player's level
+            if (correct_index + 1) > player_level:
+                lock_rect = lock_resize.get_rect(center=list_of_quiz[correct_index].center)
+                screen.blit(lock_resize, lock_rect.topleft)
+
         total_quizzes_rendered += len(value)
 
     if alert:
         screen.blit(overlay, (0, 0))
         pygame.draw.rect(screen, (100, 100, 100), (480, 350, 320, 100), border_radius=10)
         screen.blit(question_unavailable, (492, 390))
+
     pygame.display.update()
 pygame.quit()
