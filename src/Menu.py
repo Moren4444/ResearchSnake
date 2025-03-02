@@ -1,6 +1,7 @@
 import pygame
 from database import Chapter_Quiz, Select
 from Result import wrap_text_word_based
+import os
 
 pygame.init()
 running = True
@@ -15,7 +16,7 @@ scale = 3.193648
 testing = {}
 list_of_quiz = []
 list_of_levels = []
-player_level = 3
+player_level = int(os.getenv("PLAYER_LEVEL", 1))  # Default to 1 if not set
 font = pygame.font.Font("assets/PeaberryBase.ttf", 30)
 fonts = pygame.font.Font("assets/PeaberryBase.ttf", 40)
 sec_font = pygame.font.Font("assets/PeaberryBase.ttf", 25)
