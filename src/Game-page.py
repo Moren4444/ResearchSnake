@@ -1,5 +1,3 @@
-import time
-
 import pygame
 from snakes import Game
 from Resouce import Buttons
@@ -59,6 +57,7 @@ list_Question = Retrieve_Question(1, "Question")
 Option_title = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
 answer = Retrieve_Question(1, "CorrectAnswer")
 hit = False
+
 while running:
     screen.fill((50, 50, 50))
     text = font.render(f"{questions}", True, (255, 255, 255))
