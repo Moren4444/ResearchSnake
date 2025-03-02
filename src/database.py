@@ -25,6 +25,14 @@ def user_info():
     return user
 
 
+def Select(column, table):
+    cursor.execute(f"Select {column} from {table}")
+    select = cursor.fetchall()
+    for index, i in enumerate(select):
+        if index + 1 == int(i[0]):
+            return index + 1
+
+
 def Retrieve_Question(ids, column="*"):
     quiz_id = ids
     row = []
@@ -48,8 +56,20 @@ def get_last_user_Id():
     return results if results else None  # Fetch the highest ID
 
 
+def Chapter_Quiz():
+    cursor.execute("Select ChapterID from Chapter")
+    chapter = cursor.fetchall()
+    cursor.execute("Select * from Quiz order by ChapterID, LevelRequired")
+    quiz = cursor.fetchall()
+    return len(chapter), quiz
+
+
 if __name__ == "__main__":
-    question = Retrieve_Question(1, "Question")
+    question = Retrieve_Question(1, "CorrectAnswer")
     result = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
-    # print(user_info())
-    print(result[question.index("Testing 2")])
+    # for i in Select("QuizID", "Question"):
+    #     print(i)
+    print(Select("QuizID", "Question"))
+    print(Chapter_Quiz()[1])
+    print(question)
+

@@ -1,5 +1,5 @@
 import pygame
-from database import Chapter_Quiz
+from database import Chapter_Quiz, Select
 from Result import wrap_text_word_based
 
 pygame.init()
@@ -25,6 +25,12 @@ display_answer = [""]
 char_index_answer = [0]
 description_title = sec_font.render("Description: ", True, (0, 0, 0))
 play = font.render("Play", True, (0, 0, 0))
+available_question_quiz = Select("QuizID", "Question")
+overlay = pygame.Surface((1280, 800), pygame.SRCALPHA)  # Enable per-pixel alpha
+overlay.fill((0, 0, 0, 130))  # RGBA: Black with 100/255 transparency
+overlay_rect = overlay.get_rect(topleft=(0, 0))
+question_unavailable = sec_font.render("Quiz is not available", True, (255, 255, 255))
+print(question_unavailable.get_width())
 # Group quizzes by chapter
 for i in range(len(quiz)):
     chapter_id = int(quiz[i][4])
@@ -71,6 +77,7 @@ char_index_title = 0
 char_index_description = 0
 last_update_time = pygame.time.get_ticks()
 animation_speed = 50  # Milliseconds per character
+alert = False
 
 while running:
     screen.fill((50, 50, 50))
@@ -81,17 +88,32 @@ while running:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-            for i, rect in enumerate(list_of_quiz):
-                if rect.collidepoint(mouse_pos):  # Check if mouse click is inside the rect
-                    print(f"Quiz {i + 1} clicked!")  # Perform action for clicked quiz
-                    quiz_level = i
-                    menu_open = True
-                    char_index_title = 0  # Reset animation for title
-                    char_index_description = 0  # Reset animation for description
-                    print(quiz[quiz_level])
-                    # Example: Start the quiz, display a message, etc.
-            if close_rect.collidepoint(event.pos):
-                menu_open = False
+            if alert:
+                # Close the overlay if clicked anywhere
+                if overlay_rect.collidepoint(mouse_pos):
+                    alert = False
+            else:
+                # Handle quiz clicks only when the overlay is not active
+                for i, rect in enumerate(list_of_quiz):
+                    if rect.collidepoint(mouse_pos):
+                        print(f"Quiz {i + 1} clicked!")
+                        quiz_level = i
+                        print(quiz[quiz_level])
+                        if int(quiz[quiz_level][0]) <= available_question_quiz:
+                            print("Yes")
+                            char_index_title = 0
+                            char_index_description = 0
+                            menu_open = True
+                            alert = False
+                            break
+                        else:
+                            menu_open = False
+                            alert = True
+                # Handle close button
+                if close_rect.collidepoint(mouse_pos):
+                    menu_open = False
+            # if overlay_rect.collidepoint(event.pos):
+            #     alert = False
 
     if menu_open:
         level_click = quiz[quiz_level]
@@ -120,7 +142,7 @@ while running:
                 char_index_title += 1
             if char_index_description < len(level_click[2]):
                 char_index_description += 1
-        pygame.draw.rect(screen, (150, 188, 219), (935, 550, 210, 100),  border_radius=5)
+        pygame.draw.rect(screen, (150, 188, 219), (935, 550, 210, 100), border_radius=5)
         screen.blit(play, (1000, 590))
 
     # Draw ONE background rectangle per chapter
@@ -145,6 +167,9 @@ while running:
             screen.blit(level, list_of_levels[correct_index])
         total_quizzes_rendered += len(value)
 
+    if alert:
+        screen.blit(overlay, (0, 0))
+        pygame.draw.rect(screen, (100, 100, 100), (480, 350, 320, 100), border_radius=10)
+        screen.blit(question_unavailable, (492, 390))
     pygame.display.update()
-
 pygame.quit()
