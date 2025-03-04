@@ -110,14 +110,13 @@ if __name__ == "__main__":
             user_input = (username_field.value.strip(), password_field.value.strip())  # Remove spaces
             for i in user_info():  # Loop through stored user data
                 stored_user = (i[1].strip(), i[2].strip())  # Strip DB values
-
                 if user_input == stored_user:
                     print("✅ Correct Login!")
                     # Close the current Flet app
                     page.window.close()
                     os.environ["PLAYER_LEVEL"] = str(i[3])
                     # Run the Menu.py script
-                    subprocess.run([sys.executable, "Menu.py"])
+                    subprocess.run([sys.executable, "Menu.py", str(i)])
                     return
             print("Incorrect")
 

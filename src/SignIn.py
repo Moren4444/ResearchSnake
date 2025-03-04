@@ -1,6 +1,8 @@
 import flet as ft
 from database import user_info, insert, get_last_user_Id
-import random
+import os
+import subprocess
+import sys
 
 username = ft.TextField(
     label="Username",
@@ -58,7 +60,7 @@ def signin_view(page):
                                         bgcolor="#FF0066",
                                         width=84 * 3,
                                         height=20 * 3,
-                                        on_click=submit,  # Call submit() on click
+                                        on_click=lambda e: submit(e, page),  # Call submit() on click
                                     ),
                                     ft.TextButton("Login", style=ft.ButtonStyle(color="white"),
                                                   on_click=lambda e: page.go("/")),
@@ -89,10 +91,10 @@ def signin_view(page):
     )
 
 
-def submit(e):
+def submit(e, page):
     user_input = (username.value.strip(), password.value.strip(), confirm.value.strip())
     if user_input[1] != user_input[2]:
-        print("Incorrect Password or username")
+        print("Password must be the same")
         return
     for i in user_info():
         if user_input[0] == i[1]:
@@ -107,5 +109,10 @@ def submit(e):
 
     # Insert new user into the database
     insert(f"INSERT INTO [User] VALUES ('{new_id}', '{user_input[0]}', '{user_input[1]}', 1, 'Student')")
-
     print("User registered successfully!")
+    player_info = tuple([new_id, user_input[0], user_input[1], 1, "Student"])
+    page.window.close()
+    os.environ["PLAYER_LEVEL"] = "1"
+    # Run the Menu.py script
+    subprocess.run([sys.executable, "Menu.py", str(player_info)])
+    return

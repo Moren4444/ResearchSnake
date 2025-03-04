@@ -2,6 +2,8 @@ import pygame
 from database import Chapter_Quiz, Select
 from Result import wrap_text_word_based
 import os
+import subprocess
+import sys
 
 pygame.init()
 running = True
@@ -16,7 +18,9 @@ scale = 3.193648
 testing = {}
 list_of_quiz = []
 list_of_levels = []
-player_level = int(os.getenv("PLAYER_LEVEL", 1))  # Default to 1 if not set
+player_info = eval(sys.argv[1])
+print(player_info)
+player_level = player_info[3]  # Default to 1 if not set
 font = pygame.font.Font("assets/PeaberryBase.ttf", 30)
 fonts = pygame.font.Font("assets/PeaberryBase.ttf", 40)
 sec_font = pygame.font.Font("assets/PeaberryBase.ttf", 25)
@@ -29,6 +33,8 @@ display_answer = [""]
 char_index_answer = [0]
 description_title = sec_font.render("Description: ", True, (0, 0, 0))
 play = font.render("Play", True, (0, 0, 0))
+play_button = pygame.Rect(935, 550, 210, 100)
+
 available_question_quiz = Select("QuizID", "Question")
 overlay = pygame.Surface((1280, 800), pygame.SRCALPHA)  # Enable per-pixel alpha
 overlay.fill((0, 0, 0, 130))  # RGBA: Black with 100/255 transparency
@@ -36,6 +42,8 @@ overlay_rect = overlay.get_rect(topleft=(0, 0))
 question_unavailable = sec_font.render("Quiz is not available", True, (255, 255, 255))
 print(question_unavailable.get_width())
 # Group quizzes by chapter
+
+
 for i in range(len(quiz)):
     chapter_id = int(quiz[i][4])
     if chapter_id not in chapter_quizzes:
@@ -102,14 +110,14 @@ while running:
                     if rect.collidepoint(mouse_pos):
                         # Check if the quiz is locked
                         if (i + 1) > player_level:
-                            alert = True  # Show a "Quiz is locked" message
+                            # alert = True  # Show a "Quiz is locked" message
                             print("Quiz is locked")
                             break  # Skip further processing
 
                         # Existing logic for available questions
                         print(f"Quiz {i + 1} clicked!")
                         quiz_level = i
-                        print(quiz[quiz_level])
+                        # print(quiz[quiz_level])
                         if int(quiz[quiz_level][0]) <= available_question_quiz:
                             print("Yes")
                             char_index_title = 0
@@ -122,8 +130,12 @@ while running:
                             alert = True
                 if close_rect.collidepoint(mouse_pos):
                     menu_open = False
-            # if overlay_rect.collidepoint(event.pos):
-            #     alert = False
+                if play_button.collidepoint(mouse_pos):
+                    print("Quiz: ", quiz[quiz_level])
+                    pygame.quit()
+                    # Run Page-Menu.py and pass quiz[quiz_level] as a command-line argument
+                    subprocess.run([sys.executable, "Page-Menu.py", str(quiz[quiz_level]), str(player_info)])
+                    sys.exit()  # Exit the current script
 
     if menu_open:
         level_click = quiz[quiz_level]

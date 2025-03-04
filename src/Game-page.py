@@ -1,13 +1,19 @@
+import os
+import sys
+
 import pygame
 from snakes import Game
 from Resouce import Buttons
 from database import Retrieve_Question
+
 
 pygame.init()
 running = True
 fullscreen = True
 color = (16, 196, 109)
 body_count = 3
+player_info = eval(sys.argv[1])
+difficulties = int(os.getenv("DIFFICULTIES", 8))
 
 settings = pygame.image.load("assets/settings.png")
 settings_size = pygame.transform.scale(settings, (128, 128))
@@ -195,5 +201,5 @@ while running:
             screen.blit(Quit_s, (270 * 2, 242.09 * 2))
 
     pygame.display.update()
-    clock.tick(8)
+    clock.tick(difficulties)
 pygame.quit()
