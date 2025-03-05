@@ -3,19 +3,19 @@ import random
 
 
 class Option:
-    def __init__(self):
+    def __init__(self, resource_path):
         # Load button images
-        self.blue_A = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/blue-A.png")
-        self.blue_A_push = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/blue-A-pushed.png")
+        self.blue_A = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/blue-A.png"))
+        self.blue_A_push = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/blue-A-pushed.png"))
 
-        self.green_B = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/green-B.png")
-        self.green_B_push = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/green-B-pushed.png")
+        self.green_B = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/green-B.png"))
+        self.green_B_push = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/green-B-pushed.png"))
 
-        self.red_C = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/red-C.png")
-        self.red_C_push = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/red-C-pushed.png")
+        self.red_C = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/red-C.png"))
+        self.red_C_push = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/red-C-pushed.png"))
 
-        self.yellow_D = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D.png")
-        self.yellow_D_push = pygame.image.load("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D-pushed.png")
+        self.yellow_D = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D.png"))
+        self.yellow_D_push = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D-pushed.png"))
 
         self.buttons = [
             {"image": self.blue_A, "pushed_image": self.blue_A_push, "x": random.randrange(680, 1020, 40),
@@ -60,9 +60,9 @@ class Option:
 
 
 class Buttons:
-    def __init__(self, screen):
+    def __init__(self, screen, resource_path):
         self.screen = screen
-        self.options = Option()
+        self.options = Option(resource_path)
         self.clock = pygame.time.Clock()
         self.last_update_time = 0  # Track the last update time for buttons
 

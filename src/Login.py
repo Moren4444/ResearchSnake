@@ -1,9 +1,8 @@
 import flet as ft
 from database import user_info
 import SignIn
-import subprocess  # Import subprocess to run external scripts
-import sys  # Import sys to exit the current script
 import os
+from Menu import Menu
 
 if __name__ == "__main__":
 
@@ -116,10 +115,12 @@ if __name__ == "__main__":
                     page.window.close()
                     os.environ["PLAYER_LEVEL"] = str(i[3])
                     # Run the Menu.py script
-                    subprocess.run([sys.executable, "Menu.py", str(i)])
+                    # subprocess.run([sys.executable, "Menu.py", str(i)])
+                    Menu(i)
                     return
             print("Incorrect")
 
         page.go(page.route)
+
 
     ft.app(target=main)
