@@ -2,7 +2,7 @@ import pygame
 
 
 class Snake:
-    def __init__(self, x, y, scale):
+    def __init__(self, x, y, scale, resource_path):
         self.frame_width = 40
         self.frame_height = 40
         self.direction = "right"
@@ -13,6 +13,7 @@ class Snake:
         self.scale = scale
         self.turn_points = {}
         self.new_head = []
+        self.resource_path = resource_path
 
         # Initialize snake positions
         self.positions = [(x - i * (self.body_width * scale), y * scale) for i in range(self.body_count)]
@@ -23,27 +24,27 @@ class Snake:
     def _load_sprites(self):
         """Load all required sprites for the snake"""
         self.head_sprites = {
-            "up": self._load_sprite("assets/Snakes/head_up.png"),
-            "down": self._load_sprite("assets/Snakes/head_down.png"),
-            "left": self._load_sprite("assets/Snakes/head_left.png"),
-            "right": self._load_sprite("assets/Snakes/head_right.png"),
+            "up": self._load_sprite(self.resource_path("assets/Snakes/head_up.png")),
+            "down": self._load_sprite(self.resource_path("assets/Snakes/head_down.png")),
+            "left": self._load_sprite(self.resource_path("assets/Snakes/head_left.png")),
+            "right": self._load_sprite(self.resource_path("assets/Snakes/head_right.png")),
         }
 
         self.tail_sprites = {
-            "up": self._load_sprite("assets/Snakes/tail_up.png"),
-            "down": self._load_sprite("assets/Snakes/tail_down.png"),
-            "left": self._load_sprite("assets/Snakes/tail_left.png"),
-            "right": self._load_sprite("assets/Snakes/tail_right.png"),
+            "up": self._load_sprite(self.resource_path("assets/Snakes/tail_up.png")),
+            "down": self._load_sprite(self.resource_path("assets/Snakes/tail_down.png")),
+            "left": self._load_sprite(self.resource_path("assets/Snakes/tail_left.png")),
+            "right": self._load_sprite(self.resource_path("assets/Snakes/tail_right.png")),
         }
 
-        self.body_horizontal = self._load_sprite("assets/Snakes/body_horizontal.png")
-        self.body_vertical = self._load_sprite("assets/Snakes/body_vertical.png")
+        self.body_horizontal = self._load_sprite(self.resource_path("assets/Snakes/body_horizontal.png"))
+        self.body_vertical = self._load_sprite(self.resource_path("assets/Snakes/body_vertical.png"))
 
         self.turn_sprites = {
-            "topleft": self._load_sprite("assets/Snakes/body_topleft.png"),
-            "topright": self._load_sprite("assets/Snakes/body_topright.png"),
-            "bottomleft": self._load_sprite("assets/Snakes/body_bottomleft.png"),
-            "bottomright": self._load_sprite("assets/Snakes/body_bottomright.png"),
+            "topleft": self._load_sprite(self.resource_path("assets/Snakes/body_topleft.png")),
+            "topright": self._load_sprite(self.resource_path("assets/Snakes/body_topright.png")),
+            "bottomleft": self._load_sprite(self.resource_path("assets/Snakes/body_bottomleft.png")),
+            "bottomright": self._load_sprite(self.resource_path("assets/Snakes/body_bottomright.png")),
         }
 
     def _load_sprite(self, path):
@@ -173,33 +174,52 @@ class Snake:
 
 
 class Game:
-    def __init__(self, x, y, screen, scale, duration):
+    def __init__(self, x, y, screen, scale, duration, resource_path):
         self.screen = screen
         self.clock = pygame.time.Clock()
-        self.snake = Snake(x, y, scale)
+        self.snake = Snake(x, y, scale, resource_path)
         self.time_bar_start = pygame.time.get_ticks()
         self.time_bar_duration = duration  # 10 seconds in milliseconds
         self.full_width = 250 * 2  # Initial width from your code
+        self.paused = False
+        self.pause_start_time = 0
+        self.timer_started = False
+
+    def pause(self):
+        """Pause the timer."""
+        if not self.paused:
+            self.paused = True
+            self.pause_start_time = pygame.time.get_ticks()
+
+    def resume(self):
+        """Resume the timer and adjust for paused time."""
+        if self.paused:
+            self.paused = False
+            pause_duration = pygame.time.get_ticks() - self.pause_start_time
+            self.time_bar_start += pause_duration  # Adjust start time
 
     def _getPosition(self):
         return self.snake.getPosition()
 
     def _TimeBar(self):
-        current_time = pygame.time.get_ticks()
+        if self.paused:
+            # Use the time when paused to calculate remaining time
+            current_time = self.pause_start_time
+        else:
+            current_time = pygame.time.get_ticks()
+
         elapsed = current_time - self.time_bar_start
         remaining = max(0, self.time_bar_duration - elapsed)
         width = (remaining / self.time_bar_duration) * self.full_width
 
-        # Optional: Change color based on remaining time
-        if remaining < 2000:  # Last 2 seconds
-            color = (255, 0, 0)  # Red
+        # Color logic remains the same
+        if remaining < 2000:
+            color = (255, 0, 0)
         else:
-            color = (16, 196, 109)  # Original color
+            color = (16, 196, 109)
 
-        pygame.draw.rect(self.screen, color,
-                         (29 * 2, 27 * 2, width, 10.85 * 2),
-                         border_top_left_radius=5,
-                         border_top_right_radius=5)
+        pygame.draw.rect(self.screen, color, (29 * 2, 27 * 2, width, 10.85 * 2),
+                         border_top_left_radius=5, border_top_right_radius=5)
 
         # Return whether time has run out
         return remaining <= 0
