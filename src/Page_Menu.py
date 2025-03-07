@@ -72,9 +72,9 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path)
                 if Start_Button.collidepoint(event.pos):
                     print("Start button clicked")
                     running = False  # Exit the current Pygame loop
+                    Game_page(player_info, selected[1], return_to_menu_callback, resource_path, chapter_info)  # Launch Game_page
                     pygame.display.quit()  # Close the current Pygame window
                     print("Launching Game_page...")
-                    Game_page(player_info, selected[1], return_to_menu_callback, resource_path)  # Launch Game_page
                     print("Game_page exited")
                     # subprocess.run([sys.executable, "Game-page.py", str(player_info)])
                     sys.exit()
@@ -87,10 +87,9 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path)
 
             # Hover Effect (print only if truly hovering)
         if release and arrow_rect.collidepoint(mouse):
-            print("Hi")
+            return_to_menu_callback(player_info)
             pygame.quit()
             # subprocess.run([sys.executable, "Menu.py", str(player_info)])
-            return_to_menu_callback(player_info)
             sys.exit()
         position = smaller_font.render(str(mouse), True, (255, 255, 255))
         screen.blit(position, (1100, 0))

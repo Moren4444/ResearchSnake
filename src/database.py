@@ -1,14 +1,17 @@
 import pyodbc
-
+# import os
 # Connection string for SQL Server
+# db_user = os.getenv("DB_USER")
+# db_password = os.getenv("DB_PASSWORD")
 connection_string = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=DESKTOP-RBGOM9O;"
     "DATABASE=ResearchSnake;"
-    "UID=sa;"  # Replace with your SQL username
-    "PWD=43567s9205;"  # Replace with your SQL password
+    f"UID=sa;"  # Replace with your SQL username
+    f"PWD=43567s9205;"  # Replace with your SQL password
 )
 
+# print(pyodbc.drivers())  # List available ODBC drivers
 conn = pyodbc.connect(connection_string)
 cursor = conn.cursor()
 
@@ -21,8 +24,13 @@ def insert(query):
 def user_info():
     cursor.execute("Select * from [User]")
     user = cursor.fetchall()
-
+    print(user)
     return user
+
+
+def select_user(id):
+    cursor.execute(f"Select * from [User] where UserID = {id}")
+    return cursor.fetchone()
 
 
 def Select(column, table):
@@ -56,6 +64,11 @@ def get_last_user_Id():
     return results if results else None  # Fetch the highest ID
 
 
+def update(table, column, new_value, id):
+    cursor.execute(f"UPDATE {table} set {column} = {new_value} where UserID = {id}")
+    cursor.commit()
+
+
 def Chapter_Quiz():
     cursor.execute("Select ChapterID from Chapter")
     chapter = cursor.fetchall()
@@ -70,6 +83,6 @@ if __name__ == "__main__":
     # for i in Select("QuizID", "Question"):
     #     print(i)
     print(Select("QuizID", "Question"))
-    print(Chapter_Quiz()[1])
+    print(select_user(4))
     print(question)
 

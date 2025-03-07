@@ -147,10 +147,10 @@ def Menu(player_info):
                         menu_open = False
                     if play_button.collidepoint(mouse_pos):
                         print("Quiz: ", quiz[quiz_level])
+                        page_menu(player_info, quiz[quiz_level], return_to_menu, resource_path)
                         pygame.display.quit()
                         # Run Page-Menu.py and pass quiz[quiz_level] as a command-line argument
                         # subprocess.run([sys.executable, "Page-Menu.py", str(quiz[quiz_level]), str(player_info)])
-                        page_menu(player_info, quiz[quiz_level], return_to_menu, resource_path)
                         sys.exit()  # Exit the current script
 
         if menu_open:
