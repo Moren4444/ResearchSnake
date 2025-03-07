@@ -2,7 +2,7 @@ import pygame
 from snakes import Game
 from Resouce import Buttons
 from database import Retrieve_Question, update
-from Result_2 import result
+from Result import result
 # from Menu import Menu
 
 
