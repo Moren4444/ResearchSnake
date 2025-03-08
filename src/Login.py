@@ -3,6 +3,32 @@ from database import user_info
 import SignIn
 import os
 from Menu import Menu
+import json
+import hashlib
+
+
+# def hash_password(password: str) -> str:
+#     """Hash a password using SHA-256."""
+#     return hashlib.sha256(password.encode()).hexdigest()
+#
+
+def save_login_credentials(username: str, password: str):
+    """Save hashed credentials to a JSON file."""
+    credentials = {
+        "username": username,
+        "password": password  # Store the hashed password
+    }
+    with open("user_credentials.json", "w") as file:
+        json.dump(credentials, file)
+
+
+def load_login_credentials():
+    """Load credentials from the JSON file."""
+    if os.path.exists("user_credentials.json"):
+        with open("user_credentials.json", "r") as file:
+            return json.load(file)
+    return {"username": "", "password": ""}  # Return empty values if file doesn't exist
+
 
 if __name__ == "__main__":
 
@@ -16,6 +42,7 @@ if __name__ == "__main__":
 
         username_field = ft.TextField(
             label="Username",
+            value=load_login_credentials().get("username", ""),
             bgcolor="#000000",
             width=156.5 * 3,
             height=25 * 3,
@@ -26,6 +53,7 @@ if __name__ == "__main__":
 
         password_field = ft.TextField(
             label="Password",
+            value=load_login_credentials().get("password", ""),
             bgcolor="#000000",
             width=156.5 * 3,
             height=25 * 3,
@@ -106,11 +134,15 @@ if __name__ == "__main__":
 
         # Function to handle button click
         def submit(e):
-            user_input = (username_field.value.strip(), password_field.value.strip())  # Remove spaces
+            # user_input = (username_field.value.strip(), password_field.value.strip())  # Remove spaces
+            username = username_field.value.strip()
+            password = password_field.value.strip()
             for i in user_info():  # Loop through stored user data
                 stored_user = (i[1].strip(), i[2].strip())  # Strip DB values
-                if user_input == stored_user:
+                if (username, password) == stored_user:
                     print("✅ Correct Login!")
+                    save_login_credentials(username, password)  # Password is hashed before saving
+
                     # Close the current Flet app
                     page.window.close()
                     os.environ["PLAYER_LEVEL"] = str(i[3])
