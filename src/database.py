@@ -36,9 +36,7 @@ def select_user(id):
 def Select(column, table):
     cursor.execute(f"Select {column} from {table}")
     select = cursor.fetchall()
-    for index, i in enumerate(select):
-        if index + 1 == int(i[0]):
-            return index + 1
+    return int(select[-1][0])
 
 
 def Retrieve_Question(ids, column="*"):
@@ -77,12 +75,32 @@ def Chapter_Quiz():
     return len(chapter), quiz
 
 
+def Update_Question(question_id, new_question, new_options, correct_answer="A"):
+    query = """
+    UPDATE Question 
+    SET Question = ?, 
+        Option1 = ?, 
+        Option2 = ?, 
+        Option3 = ?, 
+        Option4 = ?,
+        CorrectAnswer = ?
+    WHERE QuestionID = ?
+    """
+    cursor.execute(query, (new_question, new_options[0], new_options[1], new_options[2],
+                           new_options[3], correct_answer, question_id))
+    cursor.commit()
+
+
+def Delete_Question(question_id):
+    cursor.execute(f"Delete from Question where QuestionID = {question_id}")
+    cursor.commit()
+
+
 if __name__ == "__main__":
-    question = Retrieve_Question(1, "CorrectAnswer")
+    question = Retrieve_Question(1, "Question")
     result = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
     # for i in Select("QuizID", "Question"):
     #     print(i)
     print(Select("QuizID", "Question"))
-    print(select_user(4))
-    print(question)
 
+    print(question)
