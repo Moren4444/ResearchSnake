@@ -5,10 +5,11 @@ import pyodbc
 # db_password = os.getenv("DB_PASSWORD")
 connection_string = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=DESKTOP-RBGOM9O;"
+    "SERVER=26.71.121.211;"
     "DATABASE=ResearchSnake;"
     f"UID=sa;"  # Replace with your SQL username
-    f"PWD=43567s9205;"  # Replace with your SQL password
+    f"PWD=43567s9205;" # Replace with your SQL password
+    f"Network=dbmssocn;"
 )
 
 # print(pyodbc.drivers())  # List available ODBC drivers
@@ -75,7 +76,7 @@ def Chapter_Quiz():
     return len(chapter), quiz
 
 
-def Update_Question(question_id, new_question, new_options, correct_answer="A"):
+def Update_Question(quiz_id, old_question, new_question, new_options, correct_answer="A"):
     query = """
     UPDATE Question 
     SET Question = ?, 
@@ -84,11 +85,23 @@ def Update_Question(question_id, new_question, new_options, correct_answer="A"):
         Option3 = ?, 
         Option4 = ?,
         CorrectAnswer = ?
-    WHERE QuestionID = ?
+    WHERE QuizID = ? and Question = ?
     """
+    print(new_question)
+    print(old_question)
+    print(quiz_id)
     cursor.execute(query, (new_question, new_options[0], new_options[1], new_options[2],
-                           new_options[3], correct_answer, question_id))
+                           new_options[3], correct_answer, quiz_id, old_question))
     cursor.commit()
+
+
+def Add_Question():
+    query_id = "Select max(QuestionID) from Question"
+    query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?)"
+    cursor.execute(query_id)
+    new_ID = int(cursor.fetchone()[0])
+
+    cursor.execute(query, new_ID, )
 
 
 def Delete_Question(question_id):
@@ -104,3 +117,4 @@ if __name__ == "__main__":
     print(Select("QuizID", "Question"))
 
     print(question)
+    print(Add_Question())
