@@ -1,5 +1,5 @@
 import flet as ft
-from database import Retrieve_Question, Chapter_Quiz, Update_Question
+from database import Retrieve_Question, Chapter_Quiz, Update_Question, Delete_Question
 
 
 def main(page: ft.Page):
@@ -34,6 +34,7 @@ def main(page: ft.Page):
     current_q_index = 0  # Track current question's position
     selected_index = options_list.index(default_value) if default_value else 0  # Global index
 
+
     dd = ft.Dropdown(
         border_color="#FFFFFF",
         width=200,
@@ -48,6 +49,36 @@ def main(page: ft.Page):
         border_radius=5,
     )
 
+    quiz_name = ft.TextField(
+        border_color="#FFFFFF",
+        width=321,
+        bgcolor="#496158",
+        text_style=ft.TextStyle(
+            weight=ft.FontWeight.BOLD,
+            size=20,
+            color="#FFFFFF"
+        ),
+        border_radius=5
+    )
+    description = ft.TextField(
+        border_color="#FFFFFF",
+        width=540,
+        text_style=ft.TextStyle(
+            weight=ft.FontWeight.BOLD,
+            size=20,
+            color="#FFFFFF"
+        ),
+        border_radius=5,
+        multiline=True,
+        min_lines=3,  # Minimum visible lines
+        max_lines=3,  # Maximum visible lines before scrolling
+        expand=True,  # Expands to fill available space
+    )
+    for i in chapter_quizzes[selected_index + 1]:
+        if int(i[3]) == selected_index + 1:
+            quiz_name.value = i[1]
+            description.value = i[2]
+
     # Left side components
     cl = ft.Column(
         spacing=20,
@@ -61,13 +92,14 @@ def main(page: ft.Page):
         label="Question",
         width=400,
         border_color="#FFFFFF",
+        min_lines=3,
+        max_lines=3,
         text_style=ft.TextStyle(color="#FFFFFF")
     )
 
     # Modify the option_fields creation to include click handlers
     option_fields = [
         ft.TextField(
-            label=f"Option {i + 1}",
             width=200,
             border_color="#FFFFFF",
             text_style=ft.TextStyle(color="#FFFFFF"),
@@ -75,6 +107,10 @@ def main(page: ft.Page):
             bgcolor=ft.colors.RED
         ) for i in range(4)
     ]
+
+    def add_question(e):
+        # Add_Question()
+        pass
 
     def handle_close(e):
         nonlocal unsaved_changes
@@ -94,35 +130,39 @@ def main(page: ft.Page):
         nonlocal unsaved_changes, original_data
         current_question = question_title.value
         current_options = [field.value for field in option_fields]
-        selected_index = options_list.index(dd.value)
 
         # Find which option is green (correct answer)
         correct_index = next((i for i, opt in enumerate(option_fields) if opt.bgcolor == ft.colors.GREEN), 0)
         correct_answer = chr(65 + correct_index) # Convert to A-D
 
-        # Update the database
-        Update_Question(questions.index(original_data.get("question")) + 1, current_question, current_options,
-                        correct_answer=correct_answer)
+        question_database = Retrieve_Question(selected_index + 1, "Question")[current_q_index]
+        check = questions
+        check.pop(current_q_index)
+        if current_question not in check:
+            # Update the database
+            Update_Question(selected_index + 1, question_database,
+                            current_question, current_options,
+                            correct_answer=correct_answer)
 
-        # Reset unsaved changes flag
-        unsaved_changes = False
+            # Reset unsaved changes flag
+            unsaved_changes = False
 
-        # Show a success snackbar
-        page.snack_bar = ft.SnackBar(
-            ft.Text("Changes saved!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
-            bgcolor="#242323",
-            duration=1000
-        )
-        page.snack_bar.open = True
-        page.open(page.snack_bar)
+            # Show a success snackbar
+            page.snack_bar = ft.SnackBar(
+                ft.Text("Changes saved!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
+                bgcolor="#242323",
+                duration=1000
+            )
+            page.snack_bar.open = True
+            page.open(page.snack_bar)
 
-        # Close the dialog
-        handle_close(e)
+            # Close the dialog
+            # handle_close(e)
 
-        # Refresh the left container to reflect the updated question
-        questions.clear()
-        update_column(selected_index)
-        page.update()
+            # Refresh the left container to reflect the updated question
+            questions.clear()
+            update_column(selected_index)
+            page.update()
 
         # Load the pending question if there is one
         if pending_question:
@@ -133,7 +173,7 @@ def main(page: ft.Page):
         title=ft.Text("Unsaved changed"),
         content=ft.Text("Do you want to save?"),
         actions=[
-            ft.TextButton("Yes", on_click=update_record),
+            ft.TextButton("Yes", on_click=lambda e: (update_record(e), handle_close(e))),
             ft.TextButton("No", on_click=lambda e: discard_changes(e)),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
@@ -192,7 +232,7 @@ def main(page: ft.Page):
         ],
         spacing=20,
         width=500,
-        height=350
+        height=330
     )
     questions = []
 
@@ -204,9 +244,50 @@ def main(page: ft.Page):
             if current_question != original_data.get("question") or current_options != db_options:
                 page.open(dlg_modal)
 
+    # Function to handle question deletion
+    def delete_question(question):
+        # Confirm deletion with a dialog
+        confirm_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Confirm Delete"),
+            content=ft.Text(f"Are you sure you want to delete this question?"),
+            actions=[
+                ft.TextButton("Yes", on_click=lambda e: confirm_delete(question)),
+                ft.TextButton("No", on_click=lambda e: close_delete_dialog(e)),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
+        # Open the confirmation dialog
+        page.dialog = confirm_dialog
+        page.open(page.dialog)
+        page.update()
+
+    # Function to confirm deletion
+    def confirm_delete(question):
+        # Perform the deletion logic here
+        quiz_id = selected_index + 1
+        question_index = questions.index(question) + 1
+        # Call a function to delete the question from the database
+        Delete_Question(question_index)  # You need to implement this function in your database module
+
+        # Close the dialog
+        close_delete_dialog(None)
+
+        # Refresh the questions list
+        questions.clear()
+        update_column(selected_index)
+        page.update()
+
+    # Function to close the delete confirmation dialog
+    def close_delete_dialog(e):
+        page.dialog.open = False
+        page.update()
+
     # Function to update questions list
     def update_column(selected_idx):
         nonlocal selected_index, unsaved_changes
+        questions.clear()
         if unsaved_changes:
             dlg_modal.open = True
             page.open(dlg_modal)
@@ -229,7 +310,8 @@ def main(page: ft.Page):
                             border_radius=5,
                             width=280
                         ),
-                        on_tap=lambda e, q=i: handle_question_tap(q)
+                        on_tap=lambda e, q=i: handle_question_tap(q),
+                        on_secondary_tap=lambda e, q=i: delete_question(q)  # Right-click handler
                     )
                 )
             cl.update()
@@ -237,7 +319,8 @@ def main(page: ft.Page):
     # Function to update right panel with question details
     def update_question_details(question, index):
         nonlocal current_q_index, original_data
-        current_q_index = questions.index(question) if index <= 0 else questions.index(question) - (index * 5 + 1)
+        current_q_index = questions.index(question)
+
         # Get original data from database
         quiz_id = selected_index + 1
         original_question = Retrieve_Question(quiz_id, "Question")[current_q_index]
@@ -260,6 +343,7 @@ def main(page: ft.Page):
 
     # Dropdown change handler
     def dropdown_changed(e):
+        nonlocal selected_index
         selected_index = options_list.index(dd.value)
         update_column(selected_index)
 
@@ -292,12 +376,17 @@ def main(page: ft.Page):
         spacing=50,
         alignment=ft.MainAxisAlignment.START
     )
+    bottom_row = ft.Column(
+        [ft.Row([save_button], alignment=ft.MainAxisAlignment.END)],
+        width=540
+    )
     # Main layout
     main_row = ft.Row(
         [
             # Left panel
             ft.Column(
                 [
+                    quiz_name,
                     top_row,
                     ft.Container(
                         content=cl,
@@ -305,30 +394,33 @@ def main(page: ft.Page):
                         border_radius=5,
                         padding=10,
                         bgcolor="#353232",
-                    )
+                    ),
+                    ft.FloatingActionButton(icon=ft.Icons.ADD, bgcolor=ft.Colors.LIME_300)
                 ],
-                spacing=20,
                 width=350
             ),
-            # Right panel
-            ft.Container(
-                content=right_column,
-                border=ft.border.all(1, "#FFFFFF"),
-                border_radius=5,
-                padding=20,
-                bgcolor="#353232",
-            )
+            ft.Column(
+                [
+                    description,
+                    # Right panel
+                    ft.Container(
+                        content=right_column,
+                        border=ft.border.all(1, "#FFFFFF"),
+                        border_radius=5,
+                        padding=20,
+                        bgcolor="#353232",
+                    ),
+                    bottom_row
+                ],
+            ),
         ],
         spacing=50,
-        alignment=ft.MainAxisAlignment.CENTER
-    )
-    bottom_row = ft.Column(
-        [ft.Row([save_button], alignment=ft.MainAxisAlignment.END)],
-        width=950
+        alignment=ft.MainAxisAlignment.CENTER,
+        vertical_alignment=ft.CrossAxisAlignment.START,  # Align columns to the top
     )
 
     # Add main layout to page
-    page.add(main_row, bottom_row)
+    page.add(main_row)
 
     # Initialize with default values
     update_column(options_list.index(default_value))
