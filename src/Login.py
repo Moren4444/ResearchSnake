@@ -4,6 +4,9 @@ import SignIn
 import os
 from Menu import Menu
 import json
+import edit_Q
+import AccountManagement
+import Profile
 import hashlib
 
 
@@ -34,6 +37,8 @@ if __name__ == "__main__":
 
     def main(page: ft.Page):
         page.title = "Login"
+        page.window.height = 800
+        page.window.width = 1280
         # Define input fields separately so they can be accessed
         # ✅ Apply styles at the start
         page.bgcolor = "#343434"
@@ -70,6 +75,12 @@ if __name__ == "__main__":
 
             if page.route == "/signin":
                 page.views.append(SignIn.signin_view(page))  # Load Sign-In Page
+            elif page.route == "/edit_page":
+                page.views.append(edit_Q.main(page))
+            elif page.route == "/account_management":  # ✅ Handle Account Management navigation
+                page.views.append(AccountManagement.account_management(page))
+            elif page.route == "/profile_management":  # ✅ Handle Account Management navigation
+                page.views.append(Profile.profile_management(page))
             else:
                 page.views.append(login_view(page))  # Load Login Page
 
@@ -143,12 +154,14 @@ if __name__ == "__main__":
                     print("✅ Correct Login!")
                     save_login_credentials(username, password)  # Password is hashed before saving
 
-                    # Close the current Flet app
-                    page.window.close()
-                    os.environ["PLAYER_LEVEL"] = str(i[3])
                     # Run the Menu.py script
                     # subprocess.run([sys.executable, "Menu.py", str(i)])
-                    Menu(i)
+                    if i[-1] == "Student":
+                        page.window.close()
+                        Menu(i)
+                    else:
+                        print("Admin")
+                        page.go("/edit_page")
                     return
             print("Incorrect")
 
