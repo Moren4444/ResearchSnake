@@ -133,7 +133,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                     else:
                         if settings_rect.collidepoint(event.pos):
                             open_setting = True
-                            game.paused()
+                            game.pause()
                         elif Resume_rect.collidepoint(event.pos):
                             print("Resume")
                             open_setting = False
