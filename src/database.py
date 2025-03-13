@@ -87,26 +87,75 @@ def Update_Question(quiz_id, old_question, new_question, new_options, correct_an
         CorrectAnswer = ?
     WHERE QuizID = ? and Question = ?
     """
-    print(new_question)
-    print(old_question)
-    print(quiz_id)
     cursor.execute(query, (new_question, new_options[0], new_options[1], new_options[2],
                            new_options[3], correct_answer, quiz_id, old_question))
     cursor.commit()
 
 
-def Add_Question():
-    query_id = "Select max(QuestionID) from Question"
+def Add_Question(selected_id):
+    query_id = "SELECT MAX(QuestionID + 0) FROM Question;"
     query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?)"
+    check = "Select Question from Question where QuizID = 1"
     cursor.execute(query_id)
     new_ID = int(cursor.fetchone()[0])
-
-    cursor.execute(query, new_ID, )
-
-
-def Delete_Question(question_id):
-    cursor.execute(f"Delete from Question where QuestionID = {question_id}")
+    cursor.execute(check)
+    questions = []
+    taken_id = 0
+    for i in cursor.fetchall():
+        questions.append(i[0])
+    while f"Question {new_ID + 1 + taken_id}" in questions:
+        taken_id += 1
+    print(new_ID)
+    cursor.execute(query, new_ID + 1, f"Question {new_ID + 1}", "A", "Option 1", "Option 2", "Option 3", "Option 4", selected_id)
     cursor.commit()
+
+
+def Add_QuizLVL(lvl, chapter):
+    query_id = "SELECT MAX(QuizID + 0) FROM Quiz;"
+    query = "Insert Into Quiz values (?, ?, ?, ?, ?, ?)"
+    cursor.execute(query_id)
+    quiz_id = int(cursor.fetchone()[0])
+    print("Quiz ID: ", quiz_id + 1)
+    cursor.execute(query, quiz_id + 1, "Quiz Name", "Description", lvl, chapter, 1)
+    cursor.commit()
+    return quiz_id
+
+
+def Delete_QuizLVL(quiz_id):
+    query = "Delete from Quiz where QuizID = ?"
+    try:
+        cursor.execute(query, quiz_id)
+
+        cursor.commit()
+    except pyodbc.IntegrityError:
+        return True
+
+
+def Delete_All(quiz_id):
+    query = "Delete from Question where QuizID = ?"
+    cursor.execute(query, quiz_id)
+    cursor.commit()
+
+
+def Update_title(info, lvl, chapter):
+    query = """
+        UPDATE Quiz 
+        SET Name = ?, 
+            Description = ?
+        WHERE LevelRequired = ? and ChapterID = ?
+        """
+    cursor.execute(query, info[0], info[1], lvl, chapter)
+    cursor.commit()
+
+
+def Delete_Question(quiz_id, question):
+    query = "Delete from Question where QuizID = ? and Question = ?"
+    cursor.execute(query, quiz_id, question)
+    cursor.commit()
+
+
+def Delete_Quiz(lvl):
+    query = "Delete from "
 
 
 if __name__ == "__main__":
@@ -114,7 +163,7 @@ if __name__ == "__main__":
     result = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
     # for i in Select("QuizID", "Question"):
     #     print(i)
-    print(Select("QuizID", "Question"))
-
-    print(question)
-    print(Add_Question())
+    # print(Select("QuizID", "Question"))
+    Add_Question()
+    # print(question)
+    # print(Add_Question())
