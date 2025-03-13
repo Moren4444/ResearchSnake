@@ -1,5 +1,6 @@
 import flet as ft
-from database import Retrieve_Question, Chapter_Quiz, Update_Question, Delete_Question
+from database import (Retrieve_Question, Chapter_Quiz, Update_Question, Delete_Question, Add_Question, Add_QuizLVL,
+                      Delete_QuizLVL, Delete_All, Update_title)
 
 
 def main(page: ft.Page):
@@ -33,7 +34,7 @@ def main(page: ft.Page):
     original_data = {}
     current_q_index = 0  # Track current question's position
     selected_index = options_list.index(default_value) if default_value else 0  # Global index
-
+    selected_chapter_index = 1
 
     dd = ft.Dropdown(
         border_color="#FFFFFF",
@@ -51,7 +52,7 @@ def main(page: ft.Page):
 
     quiz_name = ft.TextField(
         border_color="#FFFFFF",
-        width=321,
+        width=337,
         bgcolor="#496158",
         text_style=ft.TextStyle(
             weight=ft.FontWeight.BOLD,
@@ -63,6 +64,7 @@ def main(page: ft.Page):
     description = ft.TextField(
         border_color="#FFFFFF",
         width=540,
+        bgcolor="#496158",
         text_style=ft.TextStyle(
             weight=ft.FontWeight.BOLD,
             size=20,
@@ -74,16 +76,12 @@ def main(page: ft.Page):
         max_lines=3,  # Maximum visible lines before scrolling
         expand=True,  # Expands to fill available space
     )
-    for i in chapter_quizzes[selected_index + 1]:
-        if int(i[3]) == selected_index + 1:
-            quiz_name.value = i[1]
-            description.value = i[2]
 
     # Left side components
     cl = ft.Column(
         spacing=20,
         height=350,
-        width=300,
+        width=314,
         scroll=ft.ScrollMode.ALWAYS,
     )
 
@@ -107,10 +105,32 @@ def main(page: ft.Page):
             bgcolor=ft.colors.RED
         ) for i in range(4)
     ]
+    question_title.value = Retrieve_Question(1, "Question")[current_q_index]
+    answer = Retrieve_Question(1, "CorrectAnswer")[current_q_index]
+    options = Retrieve_Question(1, "Option1, Option2, Option3, Option4")[current_q_index]
+
+    for i in range(4):
+        option_fields[i].value = options[i]
+        option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
+
+    Quiz_name = chapter_quizzes[selected_chapter_index][-1][1]
+    lvl_req = chapter_quizzes[selected_chapter_index][-1][3]
 
     def add_question(e):
-        # Add_Question()
-        pass
+        Add_Question(selected_index + 1)
+        update_column(selected_index)
+
+        print(questions)
+        if len(questions) == 1:
+            question_title.value = questions[0]
+            options = Retrieve_Question(selected_index + 1, "Option1, Option2, Option3, Option4")[0]
+            answer = Retrieve_Question(selected_index + 1, "CorrectAnswer")[0]
+            for i in range(4):
+                print(options[i])
+                option_fields[i].value = options[i]
+                option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
+                option_fields[i].disabled = False
+            question_title.disabled = False
 
     def handle_close(e):
         nonlocal unsaved_changes
@@ -133,8 +153,7 @@ def main(page: ft.Page):
 
         # Find which option is green (correct answer)
         correct_index = next((i for i, opt in enumerate(option_fields) if opt.bgcolor == ft.colors.GREEN), 0)
-        correct_answer = chr(65 + correct_index) # Convert to A-D
-
+        correct_answer = chr(65 + correct_index)  # Convert to A-D
         question_database = Retrieve_Question(selected_index + 1, "Question")[current_q_index]
         check = questions
         check.pop(current_q_index)
@@ -143,6 +162,15 @@ def main(page: ft.Page):
             Update_Question(selected_index + 1, question_database,
                             current_question, current_options,
                             correct_answer=correct_answer)
+            Update_title([quiz_name.value, description.value], selected_index + 1, selected_chapter_index)
+            index = 0
+            for i in chapter_quizzes[selected_chapter_index]:
+                if int(i[3]) == selected_index + 1:
+                    old_title = chapter_quizzes[selected_chapter_index][selected_index]
+                    update_title = (old_title[0], quiz_name.value, description.value, old_title[3], old_title[4], old_title[5])
+                    chapter_quizzes[selected_chapter_index].pop(index)
+                    chapter_quizzes[selected_chapter_index].insert(0, update_title)
+                index += 1
 
             # Reset unsaved changes flag
             unsaved_changes = False
@@ -269,7 +297,7 @@ def main(page: ft.Page):
         quiz_id = selected_index + 1
         question_index = questions.index(question) + 1
         # Call a function to delete the question from the database
-        Delete_Question(question_index)  # You need to implement this function in your database module
+        Delete_Question(quiz_id, question)  # You need to implement this function in your database module
 
         # Close the dialog
         close_delete_dialog(None)
@@ -341,11 +369,48 @@ def main(page: ft.Page):
             option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(original_answer) - ord('A')) else ft.colors.RED
         page.update()
 
+    for i in chapter_quizzes[selected_index + 1]:
+        if int(i[3]) == selected_index + 1:
+            quiz_name.value = i[1]
+            description.value = i[2]
+
     # Dropdown change handler
     def dropdown_changed(e):
-        nonlocal selected_index
+        nonlocal selected_index, selected_chapter_index
         selected_index = options_list.index(dd.value)
+        selected_chapter_index = int(chapter_dd.value[-1])
+
+        for i in chapter_quizzes[selected_chapter_index]:
+
+            if int(i[3]) == selected_index + 1 and int(i[4]) == selected_chapter_index:
+                quiz_name.value = i[1]
+                description.value = i[2]
+                selected_index = int(i[0]) - 1
+                break  # Exit after finding the first match
+        options_list.clear()
+        for i in range(len(chapter_quizzes[selected_chapter_index])):
+            options_list.append(f"Quiz {i + 1}")
+
+        if dd.value not in options_list:
+            dd.value = "Quiz 1"
+        dd.options = [ft.dropdown.Option(opt) for opt in options_list]
+
         update_column(selected_index)
+        if questions:
+            options = Retrieve_Question(selected_index + 1, "Option1, Option2, Option3, Option4")[0]
+            answer = Retrieve_Question(selected_index + 1, "CorrectAnswer")[0]
+            question_title.value = questions[0]
+            for i in range(4):
+                option_fields[i].value = options[i]
+                option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
+                option_fields[i].disabled = False
+            question_title.disabled = False
+        else:
+            question_title.disabled = True
+            for i in range(4):
+                option_fields[i].disabled = True
+
+        page.update()
 
     dd.on_change = dropdown_changed
 
@@ -368,18 +433,113 @@ def main(page: ft.Page):
         ],
         bgcolor="#000000"
     )
+
+    def Add_Quiz(e):
+        lvl = len(chapter_quizzes[selected_chapter_index]) + 1
+        get_id = Add_QuizLVL(lvl, selected_chapter_index) + 1
+        new_quiz = (str(get_id), "Quiz Name", "Description", lvl, selected_chapter_index, 1)
+        chapter_quizzes[selected_chapter_index].append(new_quiz)
+
+        options_list.clear()
+        for i in range(len(chapter_quizzes[selected_chapter_index])):
+            options_list.append(f"Quiz {i + 1}")
+        dd.options = [ft.dropdown.Option(opt) for opt in options_list]
+
+        dd.update()
+
+    def confirm_delete_quiz(e, quiz_id):
+        Delete_All(quiz_id)
+        Delete_QuizLVL(chapter_quizzes[selected_chapter_index][-1][0])
+
+        page.open(delete_snack)
+
+        chapter_quizzes[selected_chapter_index].pop(-1)
+        options_list.clear()
+        for i in range(len(chapter_quizzes[selected_chapter_index])):
+            options_list.append(f"Quiz {i + 1}")
+        dd.options = [ft.dropdown.Option(opt) for opt in options_list]
+        dd.value = "Quiz 1"
+        dd.update()
+        page.close(delete_quiz)
+
+        print(selected_index)
+        print(questions)
+        print(chapter_quizzes[selected_chapter_index][0][0])
+        update_column(int(chapter_quizzes[selected_chapter_index][0][0]) - 1)
+
+    def Delete_Quiz(e):
+        nonlocal Quiz_name, lvl_req
+        if len(chapter_quizzes[selected_chapter_index]) == 1:
+            dlg = ft.AlertDialog(
+                title=ft.Text("Minimum 1 quiz!"),
+                on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
+            )
+            page.open(dlg)
+        else:
+            if Delete_QuizLVL(chapter_quizzes[selected_chapter_index][-1][0]):
+                page.open(delete_quiz)
+            else:
+                chapter_quizzes[selected_chapter_index].pop(-1)
+                options_list.clear()
+
+                for i in range(len(chapter_quizzes[selected_chapter_index])):
+                    options_list.append(f"Quiz {i + 1}")
+                dd.options = [ft.dropdown.Option(opt) for opt in options_list]
+                dd.value = "Quiz 1"
+                quiz_name.value = chapter_quizzes[selected_chapter_index][0][1]
+                description.value = chapter_quizzes[selected_chapter_index][0][2]
+                update_column(int(chapter_quizzes[selected_chapter_index][0][0]) - 1)
+                dd.update()
+                question_title.value = questions[0]
+                options = Retrieve_Question(selected_index + 1, "Option1, Option2, Option3, Option4")[0]
+                answer = Retrieve_Question(selected_index + 1, "CorrectAnswer")[0]
+                question_title.disabled = False
+                for i in range(4):
+                    option_fields[i].value = options[i]
+                    option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
+                    option_fields[i].disabled = False
+                page.update()
+
+                page.open(delete_snack)
+
+    delete_snack = ft.SnackBar(
+        ft.Text(f"'{Quiz_name}' in Quiz {lvl_req} is deleted!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
+        bgcolor="#242323",
+        duration=1500
+    )
+
+    delete_quiz = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Confirm Delete"),
+        content=ft.Text(f"There's questions inside Quiz {lvl_req}, are you sure you wanna delete?"),
+        actions=[
+            ft.TextButton("Yes", on_click=lambda e: confirm_delete_quiz(e, selected_index + 1)),
+            ft.TextButton("No", on_click=lambda e: page.close(delete_quiz)),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+
+    pb = ft.PopupMenuButton(
+        items=[
+            ft.PopupMenuItem(text="Add", on_click=Add_Quiz),
+            ft.PopupMenuItem(text="Delete", on_click=Delete_Quiz)
+        ],
+        width=37
+    )
     top_row = ft.Row(
         [
             dd,
-            mode
+            pb,
+            mode,
         ],
-        spacing=50,
+        spacing=16,
         alignment=ft.MainAxisAlignment.START
     )
     bottom_row = ft.Column(
         [ft.Row([save_button], alignment=ft.MainAxisAlignment.END)],
         width=540
     )
+
     # Main layout
     main_row = ft.Row(
         [
@@ -395,7 +555,7 @@ def main(page: ft.Page):
                         padding=10,
                         bgcolor="#353232",
                     ),
-                    ft.FloatingActionButton(icon=ft.Icons.ADD, bgcolor=ft.Colors.LIME_300)
+                    ft.FloatingActionButton(icon=ft.Icons.ADD, bgcolor=ft.Colors.LIME_300, on_click=add_question)
                 ],
                 width=350
             ),
@@ -419,8 +579,38 @@ def main(page: ft.Page):
         vertical_alignment=ft.CrossAxisAlignment.START,  # Align columns to the top
     )
 
+    chapter_dd = ft.Dropdown(
+        options=[ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))],
+        width=300,
+        value=f"Chapter {selected_chapter_index}",
+        border_radius=5,
+        bgcolor="#000000",
+        border_color="#FFFFFF"
+    )
+
+    chapter_dd.on_change = dropdown_changed
+
+    chapter_display = ft.Column(
+        controls=[
+            ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            chapter_dd,
+                            ft.FloatingActionButton(icon=ft.Icons.ADD, bgcolor=ft.Colors.LIME_300)
+                        ],
+                        spacing=50
+                    ),
+                    ft.Divider(color="#FFFFFF", thickness=3),
+                ]
+            ),
+            main_row
+        ],
+        width=940,
+        spacing=30
+    )
     # Add main layout to page
-    page.add(main_row)
+    page.add(chapter_display)
 
     # Initialize with default values
     update_column(options_list.index(default_value))
