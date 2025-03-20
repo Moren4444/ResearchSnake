@@ -4,7 +4,7 @@ import SignIn
 import os
 from Menu import Menu
 import json
-import edit_Q
+import edit_Q2
 import AccountManagement
 import Profile
 import hashlib
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             if page.route == "/signin":
                 page.views.append(SignIn.signin_view(page))  # Load Sign-In Page
             elif page.route == "/edit_page":
-                page.views.append(edit_Q.main(page))
+                page.views.append(edit_Q2.main(page))
             elif page.route == "/account_management":  # ✅ Handle Account Management navigation
                 page.views.append(AccountManagement.account_management(page))
             elif page.route == "/profile_management":  # ✅ Handle Account Management navigation
@@ -156,11 +156,32 @@ if __name__ == "__main__":
 
                     # Run the Menu.py script
                     # subprocess.run([sys.executable, "Menu.py", str(i)])
-                    if i[-1] == "Student":
+                    if i[-2] == "Student":
                         page.window.close()
                         Menu(i)
                     else:
                         print("Admin")
+                        quiz = {
+                            "1": [
+                                ["Quiz Name",
+                                 "Description",
+                                 1,
+                                 "1",
+                                 {
+                                     "Question 1": [
+                                         "A",
+                                         "Option 1",
+                                         "Option 2",
+                                         "Option 3",
+                                         "Option 4"
+                                     ]
+                                 }
+                                 ]
+                            ]
+                        }
+                        if not os.path.exists("Quiz_draft.json"):
+                            with open("Quiz_draft.json", "w") as file:
+                                json.dump(quiz, file, indent=4)
                         page.go("/edit_page")
                     return
             print("Incorrect")

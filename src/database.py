@@ -3,6 +3,7 @@ import pyodbc
 # Connection string for SQL Server
 # db_user = os.getenv("DB_USER")
 # db_password = os.getenv("DB_PASSWORD")
+import json
 connection_string = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=26.71.121.211;"
@@ -57,6 +58,13 @@ def Retrieve_Question(ids, column="*"):
     return row
 
 
+def stu_info():
+    cursor.execute("Select * from [User] where Role = 'Student'")
+    user = cursor.fetchall()
+
+    return user
+
+
 def get_last_user_Id():
     cursor.execute("SELECT MAX(UserID) FROM [User]")
     results = cursor.fetchone()[0]
@@ -97,7 +105,10 @@ def Add_Question(selected_id):
     query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?)"
     check = "Select Question from Question where QuizID = 1"
     cursor.execute(query_id)
-    new_ID = int(cursor.fetchone()[0])
+    id_exe = cursor.fetchone()[0]
+    new_ID = 0
+    if id_exe:
+        new_ID = int(id_exe)
     cursor.execute(check)
     questions = []
     taken_id = 0
@@ -114,11 +125,61 @@ def Add_QuizLVL(lvl, chapter):
     query_id = "SELECT MAX(QuizID + 0) FROM Quiz;"
     query = "Insert Into Quiz values (?, ?, ?, ?, ?, ?)"
     cursor.execute(query_id)
-    quiz_id = int(cursor.fetchone()[0])
-    print("Quiz ID: ", quiz_id + 1)
+    quiz_id = 0
+    id_exe = cursor.fetchone()[0]
+    if id_exe:
+        quiz_id = int(id_exe)
     cursor.execute(query, quiz_id + 1, "Quiz Name", "Description", lvl, chapter, 1)
     cursor.commit()
     return quiz_id
+
+
+def Delete_Chapter(chapter_index, delete_question):
+    print(chapter_index)
+    query = "Delete from Chapter where ChapterID = ?"
+    quiz_match_delete = "Delete from Quiz where ChapterID = ?"
+    query_question = "Delete from Question where QuizID = ?"
+    for i in delete_question:
+        cursor.execute(query_question, i)
+    cursor.execute(quiz_match_delete, chapter_index)
+    cursor.execute(query, chapter_index)
+    cursor.commit()
+
+
+def Add_ChapterDB():
+    query_id = "Select MAX(ChapterID + 0) from Chapter"
+    query = "Insert Into Chapter values (?, ?)"
+    cursor.execute(query_id)
+    chap_id = 0
+    id_exe = cursor.fetchone()[0]
+    if id_exe:
+        chap_id = int(id_exe)
+    cursor.execute(query, chap_id + 1, f"Chapter {chap_id + 1}")
+
+    print("Chapter update")
+    cursor.commit()
+    return chap_id + 1
+
+
+def Update_Database():
+    with open("Quiz_draft.json") as file:
+        chapter = json.load(file)
+
+    index = 1
+    Q_index = 1
+    Chapter_query = "Insert Into Chapter values (?, ?)"
+    Quiz_query = "Insert Into Quiz values (?, ?, ?, ?, ?, ?)"
+    Question_query = "Insert Into Question values (?, ?, ?, ?, ?, ?, ?, ?)"
+    for keys, value in chapter.items():
+        cursor.execute(Chapter_query, keys, f"Chapter {keys}")
+        for quiz in value:
+            cursor.execute(Quiz_query, index, quiz[0], quiz[1], quiz[2], int(quiz[3]), 1)
+            for question, Q_value in quiz[4].items():
+                cursor.execute(Question_query, Q_index, question, Q_value[0], Q_value[1], Q_value[2]
+                               , Q_value[3], Q_value[4], index)
+                Q_index += 1
+            index += 1
+    cursor.commit()
 
 
 def Delete_QuizLVL(quiz_id):
@@ -137,7 +198,49 @@ def Delete_All(quiz_id):
     cursor.commit()
 
 
+def add_new_user(name, password, level, role):
+    query_id = "SELECT MAX(UserID) FROM [User]"
+    cursor.execute(query_id)
+    max_id = cursor.fetchone()[0]
+    new_user_id = max_id + 1
+
+    query = "INSERT INTO [User] (UserID, Name, Password, Level, Role) VALUES (?, ?, ?, ?, ?)"
+    cursor.execute(query, (new_user_id, name, password, level, role))
+    conn.commit()
+    print(f"✅ New user, {name} is added successfully，UserID: {new_user_id}")
+
+
+def update_user(user_id, new_username, new_password):
+    """ Update the username and password of a user. """
+    query = "UPDATE [User] SET Name = ?, Password = ? WHERE UserID = ?"
+    cursor.execute(query, (new_username, new_password, user_id))
+    conn.commit()
+
+
+def update_user_role(user_id, new_role):
+    query = "UPDATE [User] SET Role = ? WHERE UserID = ?"
+    try:
+        cursor.execute(query, (new_role, user_id))
+        conn.commit()
+        print(f"User {user_id} role updated to {new_role}.")
+    except Exception as ex:
+        print(f"Error updating user role: {ex}")
+        raise ex
+
+
+def delete_user(user_id):
+    query = "DELETE FROM [User] WHERE UserID = ?"
+    try:
+        cursor.execute(query, (user_id,))
+        conn.commit()
+        print(f"User {user_id} deleted successfully.")
+    except Exception as ex:
+        print(f"Error deleting user: {ex}")
+        raise ex
+
+
 def Update_title(info, lvl, chapter):
+    print(lvl, chapter)
     query = """
         UPDATE Quiz 
         SET Name = ?, 
@@ -159,11 +262,12 @@ def Delete_Quiz(lvl):
 
 
 if __name__ == "__main__":
-    question = Retrieve_Question(1, "Question")
-    result = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
+    # question = Retrieve_Question(1, "Question")
+    # result = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
     # for i in Select("QuizID", "Question"):
     #     print(i)
     # print(Select("QuizID", "Question"))
-    Add_Question()
+    # Add_Question()
     # print(question)
     # print(Add_Question())
+    print(Update_Database())
