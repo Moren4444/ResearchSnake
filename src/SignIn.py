@@ -3,6 +3,7 @@ from database import user_info, insert, get_last_user_Id
 import os
 import subprocess
 import sys
+from Menu import Menu
 
 username = ft.TextField(
     label="Username",
@@ -108,11 +109,12 @@ def submit(e, page):
         new_id = "1"  # Start with 1 if no users exist
 
     # Insert new user into the database
-    insert(f"INSERT INTO [User] VALUES ('{new_id}', '{user_input[0]}', '{user_input[1]}', 1, 'Student')")
+    insert(f"INSERT INTO [User] VALUES ('{new_id}', '{user_input[0]}', '{user_input[1]}', 1, 'Student', 1)")
     print("User registered successfully!")
     player_info = tuple([new_id, user_input[0], user_input[1], 1, "Student"])
     page.window.close()
     os.environ["PLAYER_LEVEL"] = "1"
     # Run the Menu.py script
-    subprocess.run([sys.executable, "Menu.py", str(player_info)])
+    # subprocess.run([sys.executable, "Menu.py", str(player_info)])
+    Menu(player_info)
     return

@@ -17,16 +17,34 @@ class Option:
         self.yellow_D = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D.png"))
         self.yellow_D_push = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D-pushed.png"))
 
-        self.buttons = [
-            {"image": self.blue_A, "pushed_image": self.blue_A_push, "x": random.randrange(680, 1020, 40),
-             "y": random.randrange(92, 692, 40), "name": "A"},
-            {"image": self.green_B, "pushed_image": self.green_B_push, "x": random.randrange(680, 1020, 40),
-             "y": random.randrange(92, 692, 40), "name": "B"},
-            {"image": self.red_C, "pushed_image": self.red_C_push, "x": random.randrange(680, 1020, 40),
-             "y": random.randrange(92, 692, 40), "name": "C"},
-            {"image": self.yellow_D, "pushed_image": self.yellow_D_push, "x": random.randrange(680, 1020, 40),
-             "y": random.randrange(92, 692, 40), "name": "D"},
-        ]
+        used_positions = set()
+
+        self.buttons = []
+        for button_info in [
+            {"image": self.blue_A, "pushed_image": self.blue_A_push, "name": "A"},
+            {"image": self.green_B, "pushed_image": self.green_B_push, "name": "B"},
+            {"image": self.red_C, "pushed_image": self.red_C_push, "name": "C"},
+            {"image": self.yellow_D, "pushed_image": self.yellow_D_push, "name": "D"},
+        ]:
+            while True:
+                # Generate a random position
+                x = random.randrange(680, 1020, 40)
+                y = random.randrange(92, 692, 40)
+                position = (x, y)
+
+                # Check if the position is already used
+                if position not in used_positions:
+                    used_positions.add(position)  # Mark this position as used
+                    break  # Exit the loop once a unique position is found
+
+            # Add the button with the unique position
+            self.buttons.append({
+                "image": button_info["image"],
+                "pushed_image": button_info["pushed_image"],
+                "x": x,
+                "y": y,
+                "name": button_info["name"]
+            })
 
         self.frame_duration = 1  # Number of seconds to display each frame
         self.frame_timer = 0  # Tracks time since last frame switch

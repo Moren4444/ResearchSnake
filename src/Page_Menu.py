@@ -65,13 +65,14 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path)
                     selected = ["Easy", 8]
                 elif Medium_rect.collidepoint(event.pos):
                     print("Medium")
-                    selected = ["Medium", 13]
+                    selected = ["Medium", 10]
                 elif Hard_rect.collidepoint(event.pos):
                     print("Hard")
-                    selected = ["Hard", 19]
+                    selected = ["Hard", 15]
                 if Start_Button.collidepoint(event.pos):
                     print("Start button clicked")
                     running = False  # Exit the current Pygame loop
+                    print(selected)
                     Game_page(player_info, selected[1], return_to_menu_callback, resource_path, chapter_info)  # Launch Game_page
                     pygame.display.quit()  # Close the current Pygame window
                     print("Launching Game_page...")

@@ -117,6 +117,13 @@ def Menu(player_info):
     alert = False
     current_page = 0
     sorted_chapters = sorted(chapter_quizzes.keys())
+    all_quizzes_global = []
+    global_quiz_id = 0
+    for chap_id in sorted_chapters:
+        quizzes = chapter_quizzes[chap_id]
+        for q in quizzes:
+            all_quizzes_global.append((chap_id, q, global_quiz_id))
+            global_quiz_id += 1
     total_page = (len(sorted_chapters) + 2) // 3
     Push_r = ""
     Push_l = ""
@@ -130,6 +137,50 @@ def Menu(player_info):
         end_idx = min(start_idx + 3, len(chapter_quizzes))
         show_left = current_page > 0
         show_right = current_page < total_page - 1
+        list_of_visible_quizzes = []
+
+        total_quizzes_rendered = 0  # Track global quiz index
+        for page_pos, chapter_id in enumerate(sorted_chapters[start_idx:end_idx]):
+            y_offset = 150 * page_pos  # Position within current page
+            quizzes = chapter_quizzes[chapter_id]
+
+            # Draw chapter background
+            num_quizzes = len(quizzes)
+            chap_length = (59 * scale) + (25 * (num_quizzes - 1) * scale)
+            pygame.draw.rect(screen, (105, 105, 105),
+                             (40 * scale, 42 * scale + y_offset,
+                              chap_length, 24 * scale),
+                             border_radius=5)
+
+            # Draw chapter name
+            chapter_name = font.render(f"Chapter {chapter_id}", True, (255, 255, 255))
+            screen.blit(chapter_name, (100, 100 + y_offset))
+
+            # Draw quizzes
+            for index, quiz_data in enumerate(quizzes):
+                global_idx = [g_idx for (c_id, q, g_idx) in all_quizzes_global
+                              if c_id == chapter_id and q == quiz_data][0]
+                rect = pygame.Rect(
+                    (53 * scale) + (30 * index * scale),
+                    (45 * scale) + y_offset,
+                    18 * scale,
+                    18 * scale
+                )
+                level_pos = (
+                    (59 * scale) + (30 * index * scale),
+                    (50 * scale) + y_offset
+                )
+                list_of_visible_quizzes.append((rect, global_idx))
+
+                pygame.draw.rect(screen, (246, 208, 17), rect, border_radius=5)
+                screen.blit(font.render(str(index + 1), True, (0, 0, 0)), level_pos)
+                # Lock logic
+                if (global_idx + 1) > player_level:
+                    lock_rect = lock_resize.get_rect(center=rect.center)
+                    screen.blit(lock_resize, lock_rect.topleft)
+
+            total_quizzes_rendered += len(quizzes)  # Update global index
+
         # Event handling
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -146,17 +197,16 @@ def Menu(player_info):
                     current_page = min(total_page - 1, current_page + 1)
                 else:
                     # Handle quiz clicks only when the overlay is not active
-                    for i, rect in enumerate(list_of_quiz):
+                    for rect, global_idx in list_of_visible_quizzes:
                         if rect.collidepoint(mouse_pos):
-                            # Check if the quiz is locked
-                            if (i + 1) > player_level:
+                            if (global_idx + 1) > player_level:
                                 # alert = True  # Show a "Quiz is locked" message
-                                print("Quiz is locked")
+                                print(f"Quiz {global_idx +1} is locked")
                                 break  # Skip further processing
 
                             # Existing logic for available questions
-                            print(f"Quiz {i + 1} clicked!")
-                            quiz_level = i
+                            print(f"Quiz {global_idx  + 1} clicked!")
+                            quiz_level = global_idx
                             # print(quiz[quiz_level])
                             print(available_question_quiz)
                             if Select("QuizID", "Question", quiz_level + 1):
@@ -173,7 +223,8 @@ def Menu(player_info):
                         menu_open = False
                     if play_button.collidepoint(mouse_pos):
                         print("Quiz: ", quiz[quiz_level])
-                        page_menu(player_info, quiz[quiz_level], return_to_menu, resource_path)
+                        selected_quiz = all_quizzes_global[quiz_level][1]  # (chap_id, q_data, g_idx)
+                        page_menu(player_info, selected_quiz, return_to_menu, resource_path)
                         pygame.display.quit()
                         # Run Page-Menu.py and pass quiz[quiz_level] as a command-line argument
                         # subprocess.run([sys.executable, "Page-Menu.py", str(quiz[quiz_level]), str(player_info)])
@@ -218,46 +269,7 @@ def Menu(player_info):
         #                      )
 
         # Inside the quiz rendering loop (where quizzes are drawn)
-        total_quizzes_rendered = 0  # Track global quiz index
-        for page_pos, chapter_id in enumerate(sorted_chapters[start_idx:end_idx]):
-            y_offset = 150 * page_pos  # Position within current page
-            quizzes = chapter_quizzes[chapter_id]
 
-            # Draw chapter background
-            num_quizzes = len(quizzes)
-            chap_length = (59 * scale) + (25 * (num_quizzes - 1) * scale)
-            pygame.draw.rect(screen, (105, 105, 105),
-                             (40 * scale, 42 * scale + y_offset,
-                              chap_length, 24 * scale),
-                             border_radius=5)
-
-            # Draw chapter name
-            chapter_name = font.render(f"Chapter {chapter_id}", True, (255, 255, 255))
-            screen.blit(chapter_name, (100, 100 + y_offset))
-
-            # Draw quizzes
-            for index, _ in enumerate(quizzes):
-                global_index = total_quizzes_rendered + index
-                rect = pygame.Rect(
-                    (53 * scale) + (30 * index * scale),
-                    (45 * scale) + y_offset,
-                    18 * scale,
-                    18 * scale
-                )
-                level_pos = (
-                    (59 * scale) + (30 * index * scale),
-                    (50 * scale) + y_offset
-                )
-
-                pygame.draw.rect(screen, (246, 208, 17), rect, border_radius=5)
-                screen.blit(font.render(str(index + 1), True, (0, 0, 0)), level_pos)
-
-                # Lock logic
-                if (global_index + 1) > player_level:
-                    lock_rect = lock_resize.get_rect(center=rect.center)
-                    screen.blit(lock_resize, lock_rect.topleft)
-
-            total_quizzes_rendered += len(quizzes)  # Update global index
         if show_left: screen.blit(left[0], left[1])
         if show_right: screen.blit(right[0], right[1])
 

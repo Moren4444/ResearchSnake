@@ -4,12 +4,13 @@ import pyodbc
 # db_user = os.getenv("DB_USER")
 # db_password = os.getenv("DB_PASSWORD")
 import json
+
 connection_string = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=26.71.121.211;"
     "DATABASE=ResearchSnake;"
     f"UID=sa;"  # Replace with your SQL username
-    f"PWD=43567s9205;" # Replace with your SQL password
+    f"PWD=43567s9205;"  # Replace with your SQL password
     f"Network=dbmssocn;"
 )
 
@@ -35,10 +36,16 @@ def select_user(id):
     return cursor.fetchone()
 
 
-def Select(column, table):
-    cursor.execute(f"Select {column} from {table}")
+def Select(column, table, id):
+    cursor.execute(f"Select {column} from {table} where QuizID = {id}")
     select = cursor.fetchall()
-    return int(select[-1][0])
+    return select
+
+
+def profile_info():
+    cursor.execute("select UserID + 0 as new_ID, * from [user] order by new_ID")
+    user = cursor.fetchall()
+    return user
 
 
 def Retrieve_Question(ids, column="*"):
@@ -117,7 +124,8 @@ def Add_Question(selected_id):
     while f"Question {new_ID + 1 + taken_id}" in questions:
         taken_id += 1
     print(new_ID)
-    cursor.execute(query, new_ID + 1, f"Question {new_ID + 1}", "A", "Option 1", "Option 2", "Option 3", "Option 4", selected_id)
+    cursor.execute(query, new_ID + 1, f"Question {new_ID + 1}", "A", "Option 1", "Option 2", "Option 3", "Option 4",
+                   selected_id)
     cursor.commit()
 
 
@@ -199,15 +207,27 @@ def Delete_All(quiz_id):
 
 
 def add_new_user(name, password, level, role):
-    query_id = "SELECT MAX(UserID) FROM [User]"
-    cursor.execute(query_id)
+    cursor.execute("SELECT MAX(UserID) FROM [User]")
     max_id = cursor.fetchone()[0]
-    new_user_id = max_id + 1
+
+    new_user_id = 1 if max_id is None else int(max_id) + 1
+
+    cursor.execute("SELECT COUNT(*) FROM [User] WHERE UserID = ?", (new_user_id,))
+    if cursor.fetchone()[0] > 0:
+        while True:
+            new_user_id += 1
+            cursor.execute("SELECT COUNT(*) FROM [User] WHERE UserID = ?", (new_user_id,))
+            if cursor.fetchone()[0] == 0:
+                break
 
     query = "INSERT INTO [User] (UserID, Name, Password, Level, Role) VALUES (?, ?, ?, ?, ?)"
-    cursor.execute(query, (new_user_id, name, password, level, role))
-    conn.commit()
-    print(f"✅ New user, {name} is added successfully，UserID: {new_user_id}")
+
+    try:
+        cursor.execute(query, (new_user_id, name, password, level, role))
+        conn.commit()
+        print(f"✅ New user '{name}' added successfully! UserID: {new_user_id}")
+    except pyodbc.IntegrityError as e:
+        print(f"❌ Error inserting user: {e}")
 
 
 def update_user(user_id, new_username, new_password):
@@ -226,6 +246,9 @@ def update_user_role(user_id, new_role):
     except Exception as ex:
         print(f"Error updating user role: {ex}")
         raise ex
+    cursor.execute("select UserID + 0 as new_ID, * from [user] order by new_ID")
+    user = cursor.fetchall()
+    return user
 
 
 def delete_user(user_id):
@@ -270,4 +293,5 @@ if __name__ == "__main__":
     # Add_Question()
     # print(question)
     # print(Add_Question())
-    print(Update_Database())
+    # print(Update_Database())
+    print("Hai" if Select("QuizID", "Question", 2) else "Bye")

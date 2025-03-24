@@ -43,6 +43,8 @@ def streak(user_answer):
             if number[0] > number[1]:
                 number[1] = number[0]
             number[0] = 0
+    if number[0] > number[1]:
+        return number[0]
     return number[1]
 
 
@@ -98,7 +100,6 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
         end_idx = min(start_idx + questions_per_page, questions)
         show_left = current_page > 0
         show_right = current_page < total_pages - 1
-
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:

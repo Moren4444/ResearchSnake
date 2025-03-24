@@ -7,6 +7,7 @@ import json
 import edit_Q2
 import AccountManagement
 import Profile
+import AddUser
 import hashlib
 
 
@@ -74,15 +75,17 @@ if __name__ == "__main__":
             page.views.clear()
 
             if page.route == "/signin":
-                page.views.append(SignIn.signin_view(page))  # Load Sign-In Page
+                page.views.append(SignIn.signin_view(page))
             elif page.route == "/edit_page":
                 page.views.append(edit_Q2.main(page))
-            elif page.route == "/account_management":  # ✅ Handle Account Management navigation
+            elif page.route == "/account_management":
                 page.views.append(AccountManagement.account_management(page))
-            elif page.route == "/profile_management":  # ✅ Handle Account Management navigation
+            elif page.route == "/profile_management":
                 page.views.append(Profile.profile_management(page))
+            elif page.route == "/add_new_user":
+                page.views.append(AddUser.new_user(page))
             else:
-                page.views.append(login_view(page))  # Load Login Page
+                page.views.append(login_view(page))
 
             page.update()
 
@@ -153,7 +156,9 @@ if __name__ == "__main__":
                 if (username, password) == stored_user:
                     print("✅ Correct Login!")
                     save_login_credentials(username, password)  # Password is hashed before saving
-
+                    page.session.set("username", i[1])  # Store username
+                    page.session.set("password", i[2])  # Store password
+                    page.session.set("user_id", i[0])  # Store user ID for database update
                     # Run the Menu.py script
                     # subprocess.run([sys.executable, "Menu.py", str(i)])
                     if i[-2] == "Student":
