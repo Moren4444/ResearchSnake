@@ -120,8 +120,9 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         elif proceed_rect.collidepoint(event.pos) or proceed_rect_over.collidepoint(event.pos):
                             print("Proceed..")
                             try:
-                                print(player_info[0])
+                                print(f"checking: {chapter_info[3]}, {player_info[0]}")
                                 # Update the player's level in the database
+
                                 if int(chapter_info[3]) >= int(player_info[3]):
                                     update("[User]", "[Level]", int(player_info[3]) + 1, player_info[0])
                                 result(chapter_info, user_answer, resource_path, return_menu, player_info)
@@ -132,6 +133,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             # sys.exit()
                     else:
                         if settings_rect.collidepoint(event.pos):
+                            print("HAi")
                             open_setting = True
                             game.pause()
                         elif Resume_rect.collidepoint(event.pos):
@@ -189,6 +191,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                  border_top_left_radius=5, border_top_right_radius=5)
                 if game._TimeBar():
                     is_alive = False
+                    [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
                     game_over = True
                 # pygame.draw.rect(screen, color, (29 * 2, 27 * 2, 250 * 2, 10.85 * 2),
                 #                  border_top_left_radius=5, border_top_right_radius=5)
@@ -208,9 +211,11 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                     if position[0] < 620 + 40 or position[0] > 1120 - 40:
                         is_alive = False
                         game_over = True
+                        [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
                     elif position[1] < 82 or position[1] > 692 - 40:
                         is_alive = False
                         game_over = True
+                        [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
                     else:
                         hit = option.check_collision(position)  # Check for collisions with buttons
 
@@ -223,6 +228,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             screen.blit(text, (80, 100))
                         questions += 1
                         game.time_bar_start = pygame.time.get_ticks()
+
                         if answer[questions - 1] == hit:
                             body_count += 1
                             user_answer.append(True)
@@ -282,6 +288,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                                             , 650, 300))
                     screen.blit(game_over_text, ((screen.get_width() - game_over_text.get_width()) / 2, 365))
                     screen.blit(Restart_s, ((screen.get_width() - Restart_s.get_width()) / 2, 450))
+                    # print(int(len(answer) / 2) <= user_answer.count(True))
                     if int(len(answer) / 2) <= user_answer.count(True):
                         player_proceed = True
                     if player_proceed:

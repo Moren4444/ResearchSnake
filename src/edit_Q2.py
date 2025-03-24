@@ -477,6 +477,11 @@ def main(page: ft.Page):
             question_index = questions.index(question) + 1
             # Call a function to delete the question from the database
             # Delete_Question(quiz_id, question)  # You need to implement this function in your database module
+            print(questions, selected_index, selected_chapter_index)
+            if selected_chapter_index == 1 and selected_index == 0 and len(questions) == 1:
+                warning = ft.AlertDialog(title=ft.Text("Cannot delete the last question"))
+                page.open(warning)
+                return
             delete_last_question(str(selected_chapter_index))
             # Close the dialog
             close_delete_dialog(None)
@@ -762,6 +767,12 @@ def main(page: ft.Page):
             nonlocal selected_index, selected_chapter_index
             # print(chapter_quizzes[len(chapter_quizzes)])
             list_quiz_chapter = []
+            if len(chapter) == 1:
+                warning = ft.AlertDialog(
+                    title=ft.Text("Maximum 9 chapter")
+                )
+                page.open(warning)
+                return
             for i in chapter:
                 list_quiz_chapter.append(int(i))
             delete_last_chapter()
@@ -936,6 +947,7 @@ def main(page: ft.Page):
             bgcolor="#514B4B",
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             vertical_alignment=ft.MainAxisAlignment.CENTER
+
         )
     except KeyError:
         # Add_ChapterDB()
