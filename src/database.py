@@ -24,6 +24,11 @@ def insert(query):
     conn.commit()
 
 
+def select(query):
+    cursor.execute(query)
+    return cursor.fetchall()
+
+
 def user_info():
     cursor.execute("Select * from [User]")
     user = cursor.fetchall()
