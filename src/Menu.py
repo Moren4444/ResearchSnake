@@ -36,7 +36,7 @@ def Menu(player_info):
     testing = {}
     list_of_quiz = []
     list_of_levels = []
-    player_level = player_info[3]  # Default to 1 if not set
+    player_level = player_info[4]  # Default to 1 if not set
     font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30)
     fonts = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 40)
     sec_font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 25)

@@ -1,13 +1,18 @@
 import flet as ft
-from database import user_info
+from database import user_info, last_Update
 import SignIn
 import os
 from Menu import Menu
 import json
-import edit_Q2
-import AccountManagement
+import edit_Q3
+import AdminAccountManagement
 import Profile
-import AddUser
+import AddUser_Admin
+import AddUser_Owner
+import OwnerAccountManagement
+import OwnerProfile
+from dotenv import load_dotenv
+
 import hashlib
 
 
@@ -45,6 +50,9 @@ if __name__ == "__main__":
         page.bgcolor = "#343434"
         page.vertical_alignment = "center"
         page.horizontal_alignment = "center"
+        load_dotenv()  # Load environment variables from .env
+        OWNER_KEY = os.getenv("OWNER_KEY")
+        print(OWNER_KEY)
 
         username_field = ft.TextField(
             label="Username",
@@ -77,13 +85,19 @@ if __name__ == "__main__":
             if page.route == "/signin":
                 page.views.append(SignIn.signin_view(page))
             elif page.route == "/edit_page":
-                page.views.append(edit_Q2.main(page))
-            elif page.route == "/account_management":
-                page.views.append(AccountManagement.account_management(page))
+                page.views.append(edit_Q3.main(page))
+            elif page.route == "/stu_account_management":
+                page.views.append(AdminAccountManagement.stu_account_management(page))
             elif page.route == "/profile_management":
                 page.views.append(Profile.profile_management(page))
-            elif page.route == "/add_new_user":
-                page.views.append(AddUser.new_user(page))
+            elif page.route == "/add_new_stu":
+                page.views.append(AddUser_Admin.new_student(page))
+            elif page.route == "/admin_account_management":
+                page.views.append(OwnerAccountManagement.admin_account_management(page))
+            elif page.route == "/add_new_admin":
+                page.views.append(AddUser_Owner.new_admin(page))
+            elif page.route == "/owner_profile_management":
+                page.views.append(OwnerProfile.owner_profile_management(page))
             else:
                 page.views.append(login_view(page))
 
@@ -151,21 +165,26 @@ if __name__ == "__main__":
             # user_input = (username_field.value.strip(), password_field.value.strip())  # Remove spaces
             username = username_field.value.strip()
             password = password_field.value.strip()
+            print(OWNER_KEY)
+            if password == OWNER_KEY:
+                print("🔑 Owner access granted via special key!")
+                page.go("/owner_profile_management")
+                return
             for i in user_info():  # Loop through stored user data
-                stored_user = (i[1].strip(), i[2].strip())  # Strip DB values
+                stored_user = (i[1].strip(), i[3].strip())  # Strip DB values
                 if (username, password) == stored_user:
                     print("✅ Correct Login!")
+                    last_Update(i[0])
                     save_login_credentials(username, password)  # Password is hashed before saving
                     page.session.set("username", i[1])  # Store username
                     page.session.set("password", i[2])  # Store password
                     page.session.set("user_id", i[0])  # Store user ID for database update
                     # Run the Menu.py script
                     # subprocess.run([sys.executable, "Menu.py", str(i)])
-                    if i[-2] == "Student":
+                    if i[-3] == "Student":
                         page.window.close()
                         Menu(i)
-                    else:
-                        print("Admin")
+                    elif i[-3] == "Admin":
                         quiz = {
                             "1": [
                                 ["Quiz Name",
