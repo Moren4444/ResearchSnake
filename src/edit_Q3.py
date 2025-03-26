@@ -481,7 +481,7 @@ def main(page: ft.Page):
             if selected_chapter_index == 10:
                 pb.visible = True
                 top_row.spacing = 16
-            else:
+            elif len(chapter_quizzes) > 9 >= selected_chapter_index:
                 pb.visible = False
                 top_row.spacing = 68
             current_q_index = 0
