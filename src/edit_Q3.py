@@ -830,7 +830,7 @@ def main(page: ft.Page):
                     bgcolor="#222222",
                     actions=[
                         ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                                      on_click=lambda e: page.go("/account_management")),
+                                      on_click=lambda e: page.go("/stu_account_management")),
                         ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
                                       on_click=lambda e: page.go("/edit_page")),
                         ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
