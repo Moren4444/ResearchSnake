@@ -24,7 +24,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
     clock = pygame.time.Clock()
     is_alive = True
-    game = Game(800, 412, screen, 1, 10000, resource_path)
+    game = Game(800, 412, screen, 1, 10000, resource_path, difficulties)
     option = Buttons(screen, resource_path)
     open_setting = False
     game_over = False
@@ -106,7 +106,8 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         if Restart_rect_over.collidepoint(event.pos):
                             try:
                                 body_count = 3
-                                game = Game(800, 412, screen, 1, 10000, resource_path)  # Reinitialize the game
+                                game = Game(800, 412, screen, 1, 10000, resource_path, difficulties)
+                                # Reinitialize the game
                                 is_alive = True
                                 open_setting = False
                                 game_over = False
@@ -120,11 +121,10 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         elif proceed_rect.collidepoint(event.pos) or proceed_rect_over.collidepoint(event.pos):
                             print("Proceed..")
                             try:
-                                print(f"checking: {chapter_info[3]}, {player_info[0]}")
+                                print(f"checking: {chapter_info}, {player_info[4]}")
                                 # Update the player's level in the database
-
-                                if int(chapter_info[3]) >= int(player_info[3]):
-                                    update("[User]", "[Level]", int(player_info[3]) + 1, player_info[0])
+                                if int(chapter_info[3]) >= int(player_info[4]):
+                                    update("[User]", "[Level]", int(player_info[4]) + 1, player_info[0])
                                 result(chapter_info, user_answer, resource_path, return_menu, player_info)
                             except Exception as e:
                                 print("Error: ", e)
@@ -295,7 +295,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         screen.blit(proceed_s, (200 + (screen.get_width() - proceed_s.get_width()) / 2, 450))
 
             pygame.display.update()
-            clock.tick(difficulties)
+            # clock.tick(difficulties)
     except Exception as f:
         print("Something went wrong: ", f)
     pygame.quit()

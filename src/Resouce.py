@@ -46,13 +46,13 @@ class Option:
                 "name": button_info["name"]
             })
 
-        self.frame_duration = 1  # Number of seconds to display each frame
+        self.frame_duration = 5  # Number of seconds to display each frame
         self.frame_timer = 0  # Tracks time since last frame switch
         self.current_state = "normal"  # Tracks whether buttons are in normal or pushed state
 
     def update(self, dt):
         """Update the animation state."""
-        self.frame_timer += dt / 1000  # Convert milliseconds to seconds
+        self.frame_timer += dt / 5000  # Convert milliseconds to seconds
         if self.frame_timer >= self.frame_duration:
             self.frame_timer = 0  # Reset the timer
             # Toggle between normal and pushed states
