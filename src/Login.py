@@ -1,5 +1,8 @@
+import platform
+import time
+
 import flet as ft
-from database import user_info, last_Update
+from database import user_info, last_Update, Chapter_Quiz, Add_ChapterDB, Add_QuizLVL, Add_Question
 import SignIn
 import os
 from Menu import Menu
@@ -12,6 +15,8 @@ import AddUser_Owner
 import OwnerAccountManagement
 import OwnerProfile
 from dotenv import load_dotenv
+import sys
+import getpass
 
 import hashlib
 
@@ -29,6 +34,12 @@ def save_login_credentials(username: str, password: str):
     }
     with open("user_credentials.json", "w") as file:
         json.dump(credentials, file)
+
+
+#Added Hashing
+def hash_password(password: str) -> str:
+    """Hash a password using SHA-256."""
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
 def load_login_credentials():
@@ -50,9 +61,34 @@ if __name__ == "__main__":
         page.bgcolor = "#343434"
         page.vertical_alignment = "center"
         page.horizontal_alignment = "center"
-        load_dotenv()  # Load environment variables from .env
-        OWNER_KEY = os.getenv("OWNER_KEY")
-        print(OWNER_KEY)
+        # Check if running as a PyInstaller executable
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS  # PyInstaller's temp extraction path
+        else:
+            base_path = os.path.dirname(__file__)  # Normal script execution path
+
+        # 🛠 Developer-defined owner credentials (Set before deployment)
+        ALLOWED_OWNER = "WONG JASON"  # Change to the correct username
+        ALLOWED_HOSTNAME = "DESKTOP-RBGOM9O"  # Change to the real owner's device name
+
+        # Get current system details
+        current_user = getpass.getuser()  # Get current username
+        current_hostname = platform.node()  # Get current device name
+        dotenv_path = os.path.join(os.path.dirname(__file__), ".env")  # Get correct .env path
+
+        # Debugging messages (Make sure this prints in CMD/terminal)
+        print(f"🔍 Debug: Running as {current_user} on {current_hostname}")
+        load_dotenv(dotenv_path)
+        OWNER_KEY = None
+        # 🛡️ Check if this system is the authorized owner
+        if current_user == ALLOWED_OWNER and current_hostname == ALLOWED_HOSTNAME:
+            print("✅ Access granted to owner. Setting file permissions...")
+            # if os.name == "nt":  # Windows
+            #     os.system(f'icacls "{dotenv_path}" /inheritance:r /grant "{current_user}:(R,W)" /deny Everyone')
+            OWNER_KEY = os.getenv("OWNER_KEY")
+            print("Test: ", OWNER_KEY)
+        else:
+            print(OWNER_KEY)
 
         username_field = ft.TextField(
             label="Username",
@@ -93,7 +129,7 @@ if __name__ == "__main__":
             elif page.route == "/add_new_stu":
                 page.views.append(AddUser_Admin.new_student(page))
             elif page.route == "/admin_account_management":
-                page.views.append(OwnerAccountManagement.admin_account_management(page))
+                page.views.append(OwnerAccountManagement.admin_account_mkanagement(page))
             elif page.route == "/add_new_admin":
                 page.views.append(AddUser_Owner.new_admin(page))
             elif page.route == "/owner_profile_management":
@@ -165,14 +201,16 @@ if __name__ == "__main__":
             # user_input = (username_field.value.strip(), password_field.value.strip())  # Remove spaces
             username = username_field.value.strip()
             password = password_field.value.strip()
-            print(OWNER_KEY)
-            if password == OWNER_KEY:
-                print("🔑 Owner access granted via special key!")
-                page.go("/owner_profile_management")
-                return
+            hashed_password = hash_password(password)  # Hash the entered password
+            print(hashed_password)
+            if hashed_password:
+                if hashed_password == OWNER_KEY:
+                    print("🔑 Owner access granted via special key!")
+                    page.go("/owner_profile_management")
+                    return
             for i in user_info():  # Loop through stored user data
                 stored_user = (i[1].strip(), i[3].strip())  # Strip DB values
-                if (username, password) == stored_user:
+                if (username, hashed_password) == stored_user:
                     print("✅ Correct Login!")
                     last_Update(i[0])
                     save_login_credentials(username, password)  # Password is hashed before saving
@@ -185,27 +223,32 @@ if __name__ == "__main__":
                         page.window.close()
                         Menu(i)
                     elif i[-3] == "Admin":
-                        quiz = {
-                            "1": [
-                                ["Quiz Name",
-                                 "Description",
-                                 1,
-                                 "1",
-                                 {
-                                     "Question 1": [
-                                         "A",
-                                         "Option 1",
-                                         "Option 2",
-                                         "Option 3",
-                                         "Option 4"
-                                     ]
-                                 }
-                                 ]
-                            ]
-                        }
-                        if not os.path.exists("Quiz_draft.json"):
-                            with open("Quiz_draft.json", "w") as file:
-                                json.dump(quiz, file, indent=4)
+                        # quiz = {
+                        #     "1": [
+                        #         ["Quiz Name",
+                        #          "Description",
+                        #          1,
+                        #          "1",
+                        #          {
+                        #              "Question 1": [
+                        #                  "A",
+                        #                  "Option 1",
+                        #                  "Option 2",
+                        #                  "Option 3",
+                        #                  "Option 4"
+                        #              ]
+                        #          }
+                        #          ]
+                        #     ]
+                        # }
+                        # if not os.path.exists("Quiz_draft.json"):
+                        #     with open("Quiz_draft.json", "w") as file:
+                        #         json.dump(quiz, file, indent=4)
+                        if not Chapter_Quiz()[1]:
+                            print("HAI")
+                            Add_ChapterDB()
+                            Add_QuizLVL(1, 1)
+                            Add_Question(1)
                         page.go("/edit_page")
                     return
             print("Incorrect")
