@@ -13,6 +13,7 @@ class Snake:
         self.scale = scale
         self.turn_points = {}
         self.new_head = []
+
         self.resource_path = resource_path
 
         # Initialize snake positions
@@ -174,7 +175,7 @@ class Snake:
 
 
 class Game:
-    def __init__(self, x, y, screen, scale, duration, resource_path):
+    def __init__(self, x, y, screen, scale, duration, resource_path, difficulties):
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.snake = Snake(x, y, scale, resource_path)
@@ -182,6 +183,8 @@ class Game:
         self.time_bar_duration = duration  # 10 seconds in milliseconds
         self.full_width = 250 * 2  # Initial width from your code
         self.paused = False
+        self.last_move_time = pygame.time.get_ticks()
+        self.move_interval = difficulties
         self.pause_start_time = 0
         self.timer_started = False
 
@@ -224,9 +227,10 @@ class Game:
         # Return whether time has run out
         return remaining <= 0
 
-    def _animated_text(self, sentence, font, x, y, space_between, max_width, animation_speed=50):
+    def _animated_text(self, sentence, font, x, y, space_between, max_width, animation_duration=500):
+        """Animate text appearance over a specified duration in milliseconds"""
         # Create unique identifier for each text instance
-        text_key = (sentence, x, y)  # Unique combination of content and position
+        text_key = (sentence, x, y)
 
         # Initialize animation state if not exists
         if not hasattr(self, '_anim_states'):
@@ -234,35 +238,41 @@ class Game:
 
         if text_key not in self._anim_states:
             self._anim_states[text_key] = {
-                'index': 0,
+                'start_time': pygame.time.get_ticks(),
+                'duration': animation_duration,
                 'lines': [],
                 'current_line': '',
                 'current_line_width': 0,
                 'current_word': '',
                 'current_word_width': 0,
-                'last_update_time': pygame.time.get_ticks(),
-                'animation_speed': animation_speed  # Use parameter value
+                'completed': False
             }
 
         state = self._anim_states[text_key]
-        current_time = pygame.time.get_ticks()
-        elapsed_time = current_time - state['last_update_time']
 
-        # Calculate how many characters to process based on animation speed
-        chars_to_process = max(1, int(elapsed_time / state['animation_speed']))
+        # Calculate animation progress (0.0 to 1.0)
+        elapsed = pygame.time.get_ticks() - state['start_time']
+        progress = min(1.0, elapsed / state['duration'])
 
-        if chars_to_process > 0:
-            state['last_update_time'] = current_time
+        # Calculate how many characters should be visible
+        total_chars = len(sentence)
+        visible_chars = int(progress * total_chars)
 
-            for _ in range(chars_to_process):
-                if state['index'] >= len(sentence):
-                    break
+        # Process the visible portion of text
+        if not state['completed']:
+            visible_text = sentence[:visible_chars]
 
-                char = sentence[state['index']]
-                state['index'] += 1
+            # Reset state for reprocessing
+            state['lines'] = []
+            state['current_line'] = ''
+            state['current_line_width'] = 0
+            state['current_word'] = ''
+            state['current_word_width'] = 0
+
+            # Process each character in visible text
+            for char in visible_text:
                 char_width = font.size(char)[0]
 
-                # Existing word wrapping logic
                 if char == ' ':
                     potential_width = state['current_line_width'] + state['current_word_width'] + char_width
                     if potential_width > max_width:
@@ -291,7 +301,9 @@ class Game:
                         state['current_word'] = new_word
                         state['current_word_width'] = new_word_width
 
-        # Draw existing lines
+            state['completed'] = (progress >= 1.0)
+
+        # Draw all lines
         current_y = y
         for line in state['lines']:
             text_surf = font.render(line, True, (0, 0, 0))
@@ -301,16 +313,22 @@ class Game:
         # Draw current line + current word
         current_text = state['current_line'] + (
             ' ' + state['current_word'] if state['current_line'] else state['current_word'])
-        text_surf = font.render(current_text, True, (0, 0, 0))
-        self.screen.blit(text_surf, (x + space_between, current_y + space_between))
+        if current_text.strip():  # Only draw if there's visible text
+            text_surf = font.render(current_text, True, (0, 0, 0))
+            self.screen.blit(text_surf, (x + space_between, current_y + space_between))
 
-        return state['index'] >= len(sentence)
+        return state['completed']
 
     def _update(self, scale, body_count, dead):
         """Update game state"""
         keys = pygame.key.get_pressed()
-        self.snake.handle_input(keys)
-        self.snake.update(scale, body_count, dead)  # Pass body_count to update
+
+        # self.snake.update(scale, body_count, dead)  # Pass body_count to update
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_move_time >= self.move_interval:
+            self.snake.handle_input(keys)
+            self.snake.update(scale, body_count, dead)
+            self.last_move_time = current_time
 
     def _draw(self, scale):
         """Draw game elements"""
