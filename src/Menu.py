@@ -224,7 +224,7 @@ def Menu(player_info):
                     if play_button.collidepoint(mouse_pos):
                         print("Quiz: ", quiz[quiz_level])
                         selected_quiz = all_quizzes_global[quiz_level][1]  # (chap_id, q_data, g_idx)
-                        page_menu(player_info, selected_quiz, return_to_menu, resource_path)
+                        page_menu(player_info, selected_quiz, return_to_menu, resource_path, quiz_level+1)
                         pygame.display.quit()
                         # Run Page-Menu.py and pass quiz[quiz_level] as a command-line argument
                         # subprocess.run([sys.executable, "Page-Menu.py", str(quiz[quiz_level]), str(player_info)])

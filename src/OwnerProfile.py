@@ -2,7 +2,8 @@ import flet as ft
 from database import update_user, select_user  # Ensure this function exists in database.py
 
 
-def owner_profile_management(page: ft.Page):
+def owner_profile_management(page: ft.Page, role, audio1, audio2):
+    print(role)
     username = page.session.get("username")
     password = page.session.get("password")
     user_id = page.session.get("user_id")
@@ -73,7 +74,9 @@ def owner_profile_management(page: ft.Page):
                                   on_click=lambda e: page.go("/admin_account_management")),
                     ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/owner_profile_management")),
-                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: page.go("/")),
+                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"),
+                                  on_click=lambda e: [page.overlay.append(audio1), page.overlay.append(audio2),
+                                                      page.go("/")]),
                 ],
             ),
             ft.Container(

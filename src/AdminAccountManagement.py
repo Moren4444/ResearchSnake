@@ -1,9 +1,11 @@
+import os
+
 import flet as ft
 from database import stu_profile_info, delete_user
 from datetime import datetime, timedelta
 
 
-def stu_account_management(page: ft.Page):
+def stu_account_management(page: ft.Page, audio1, audio2):
     users = stu_profile_info()
     password_visible = False
 
@@ -106,6 +108,10 @@ def stu_account_management(page: ft.Page):
 
     add_user_button = ft.ElevatedButton("Add New Student", on_click=lambda e: page.go("/add_new_stu"))
 
+    draft = ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
+                          on_click=lambda e: page.go("/draft_page"))
+    if not os.path.exists("Quiz_draft2.json"):
+        draft.disabled = True
     return ft.View(
         "/stu_account_management",
         [
@@ -113,13 +119,16 @@ def stu_account_management(page: ft.Page):
                 title=ft.Text("Account Management", color="white"),
                 bgcolor="#222222",
                 actions=[
+                    draft,
                     ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/stu_account_management")),
                     ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/edit_page")),
                     ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/profile_management")),
-                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: page.go("/")),
+                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"),
+                                  on_click=lambda e: [page.overlay.append(audio1), page.overlay.append(audio2),
+                                                      page.go("/")]),
                 ],
             ),
             ft.Row([toggle_button, table], alignment=ft.MainAxisAlignment.CENTER),

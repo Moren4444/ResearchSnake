@@ -1,8 +1,10 @@
+import os
+
 import flet as ft
 from database import update_user, select_user  # Ensure this function exists in database.py
 
 
-def profile_management(page: ft.Page):
+def profile_management(page: ft.Page, audio1, audio2):
     username = page.session.get("username")
     password = page.session.get("password")
     user_id = page.session.get("user_id")
@@ -67,6 +69,10 @@ def profile_management(page: ft.Page):
         label_style=ft.TextStyle(color="white"),
     )
 
+    draft = ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
+                          on_click=lambda e: page.go("/draft_page"))
+    if not os.path.exists("Quiz_draft2.json"):
+        draft.disabled = True
     return ft.View(
         "/profile_management",
         [
@@ -74,13 +80,16 @@ def profile_management(page: ft.Page):
                 title=ft.Text("Profile Management", color="white"),
                 bgcolor="#222222",
                 actions=[
+                    draft,
                     ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/stu_account_management")),
                     ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/edit_page")),
                     ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/profile_management")),
-                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: page.go("/")),
+                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"),
+                                  on_click=lambda e: [page.overlay.append(audio1), page.overlay.append(audio2),
+                                                      page.go("/")]),
                 ],
             ),
             ft.Container(

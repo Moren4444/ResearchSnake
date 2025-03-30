@@ -7,8 +7,7 @@ from database import (Retrieve_Question, Chapter_Quiz, Update_Question, Delete_Q
 import json
 
 
-def main(page: ft.Page):
-
+def main(page: ft.Page, role, audio1, audio2):
     page.title = "Edit Question"
     # Database setup
     chapter, quiz = Chapter_Quiz()
@@ -21,9 +20,12 @@ def main(page: ft.Page):
 
     def load_login_credentials():
         """Load credentials from the JSON file."""
-        if os.path.exists("Quiz_draft.json"):
-            with open("Quiz_draft.json", "r") as file:
+        if os.path.exists("Quiz_draft2.json"):
+            print("HAII")
+            with open("Quiz_draft2.json", "r") as file:
                 return json.load(file)
+        else:
+            return {}
 
     # Populate chapter_quizzes dictionary
     for i in range(len(quiz)):
@@ -215,7 +217,7 @@ def main(page: ft.Page):
         title=ft.Text("Unsaved changed"),
         content=ft.Text("Do you want to save?"),
         actions=[
-            ft.TextButton("Yes", on_click=lambda e: (update_record(e), handle_close(e))),
+            ft.TextButton("Yes", on_click=lambda e: (Json_save(e), handle_close(e))),
             ft.TextButton("No", on_click=lambda e: discard_changes(e)),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
@@ -266,19 +268,25 @@ def main(page: ft.Page):
         nonlocal unsaved_changes
         unsaved_changes = False
         question_saved = load_login_credentials()
+
+        # Ensure JSON structure exists
+        chapter_key = str(selected_chapter_index)
+        question_id = select(f"Select * from Question where QuizID = {selected_index + 1}")[current_q_index][0]
+
+        if not os.path.exists("Quiz_draft2.json"):
+            question_saved = {chapter_key: {question_id: []}}
+        else:
+            question_saved.setdefault(chapter_key, {})  # Ensure chapter exists
+
+        print(question_saved)
         print(selected_chapter_index, selected_index, current_q_index)
         print(select(f"Select * from Question where QuizID = {selected_index + 1}")[current_q_index])
+
         Answer = "A"
         for i in range(4):
             if option_fields[i].bgcolor == ft.Colors.GREEN:
-                if i == 1:
-                    Answer = "B"
-                elif i == 2:
-                    Answer = "C"
-                elif i == 3:
-                    Answer = "D"
-                else:
-                    Answer = "A"
+                Answer = "ABCD"[i]  # Smarter way to determine the answer
+
         data = [
             question_title.value,
             Answer,
@@ -286,18 +294,22 @@ def main(page: ft.Page):
             option_fields[1].value,
             option_fields[2].value,
             option_fields[3].value,
-            select(f"Select * from Question where QuizID = {selected_index + 1}")[current_q_index][-1],
+            dd.value[-2:] if dd.value[-1] == 0 else dd.value[-1],
         ]
-        question_saved[
-            select(f"Select * from Question where QuizID = {selected_index + 1}")[current_q_index][0]
-        ] = data
+
+        # Add question data
+        question_saved[chapter_key][question_id] = data
+
         with open("Quiz_draft2.json", "w") as file:
             json.dump(question_saved, file, indent=4)
+
         json_record = ft.SnackBar(
-            ft.Text("Record have been save in JSON file!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
+            ft.Text("Record has been saved in the JSON file!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
             bgcolor="#242323",
             duration=1500
         )
+        draft.disabled = False
+        page.update()
         page.open(json_record)
 
     save_button = ft.ElevatedButton(
@@ -339,7 +351,7 @@ def main(page: ft.Page):
             ft.GestureDetector(
                 content=ft.Container(
                     content=ft.Text(
-                        f"{i}",
+                        f"{i[:45]}..." if len(i) > 45 else f"{i}",
                         size=16,
                         color=ft.colors.WHITE
                     ),
@@ -427,7 +439,7 @@ def main(page: ft.Page):
                     ft.GestureDetector(
                         content=ft.Container(
                             content=ft.Text(
-                                f"{i}",
+                                f"{i[:45]}..." if len(i) > 45 else f"{i}",
                                 size=16,
                                 color=ft.colors.WHITE
                             ),
@@ -826,7 +838,10 @@ def main(page: ft.Page):
             update_column(options_list.index(default_value))
 
     page.on_view_populated = on_view_loaded  # Run this after the page is loaded
-
+    draft = ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
+                          on_click=lambda e: page.go("/draft_page"))
+    if not os.path.exists("Quiz_draft2.json"):
+        draft.disabled = True
     return ft.View(
         route="/edit_page",
         controls=[
@@ -834,13 +849,16 @@ def main(page: ft.Page):
                 title=ft.Text("Account Management", color="white"),
                 bgcolor="#222222",
                 actions=[
+                    draft,
                     ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/stu_account_management")),
                     ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/edit_page")),
                     ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/profile_management")),
-                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: page.go("/")),
+                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"),
+                                  on_click=lambda e: [page.overlay.append(audio1), page.overlay.append(audio2),
+                                                      page.go("/")]),
                 ],
             ),
             chapter_display

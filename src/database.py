@@ -30,6 +30,10 @@ def select(query):
     return cursor.fetchall()
 
 
+def update_question(query):
+    cursor.execute(query)
+    conn.commit()
+
 def last_Update(ID):
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(now_str)
@@ -77,7 +81,6 @@ def stu_profile_info():
 def user_info():
     cursor.execute("Select * from [User]")
     user = cursor.fetchall()
-    print(user)
     return user
 
 
@@ -320,4 +323,5 @@ if __name__ == "__main__":
     # print(question)
     # print(Add_Question())
     # print(Update_Database())
-    print("Hai" if Select("QuizID", "Question", 2) else "Bye")
+    # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
+    print(select("select * from Quiz where ChapterID = 1"))

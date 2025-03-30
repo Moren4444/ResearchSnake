@@ -1,3 +1,5 @@
+import hashlib
+
 import flet as ft
 from database import add_new_user  # Ensure this function exists in database.py
 from datetime import datetime
@@ -23,6 +25,7 @@ def new_admin(page: ft.Page):
         username = username_field.value.strip()
         email = email_field.value.strip()
         password = password_field.value.strip()
+        hash_pass = hashlib.sha256(password.encode()).hexdigest()
         level = int(level_field.value) if level_field.value.isdigit() else 1
         role = "Admin"
         registeredDate = current_dt
@@ -35,7 +38,7 @@ def new_admin(page: ft.Page):
             page.update()
             return
 
-        add_new_user(username, email, password, level, role, registeredDate, lastLogin)
+        add_new_user(username, email, hash_pass, level, role, registeredDate, lastLogin)
 
         # Show a success SnackBar
         page.snack_bar = ft.SnackBar(content=ft.Text("User added successfully!", color="white"), bgcolor="green")

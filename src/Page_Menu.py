@@ -4,7 +4,7 @@ import sys
 from Game_page import Game_page
 
 
-def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path):
+def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path, quiz_level):
     pygame.init()
     running = True
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
@@ -32,7 +32,7 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path)
     Start_Button = pygame.Rect(369 * scale, 234 * scale, 60 * scale, 27 * scale)
     Push = ""
     release = False
-    selected = ["Easy", 200]
+    selected = ["Easy", 180]
 
     def arrow(color="blue", push=""):
         try:
@@ -62,7 +62,7 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path)
                     Push = "pushed"
                 if Easy_rect.collidepoint(event.pos):
                     print("Easy")
-                    selected = ["Easy", 200]
+                    selected = ["Easy", 180]
                 elif Medium_rect.collidepoint(event.pos):
                     print("Medium")
                     selected = ["Medium", 150]
@@ -73,7 +73,7 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path)
                     print("Start button clicked")
                     running = False  # Exit the current Pygame loop
                     print(selected)
-                    Game_page(player_info, selected[1], return_to_menu_callback, resource_path, chapter_info)  # Launch Game_page
+                    Game_page(player_info, selected[1], return_to_menu_callback, resource_path, chapter_info, quiz_level)
                     pygame.display.quit()  # Close the current Pygame window
                     print("Launching Game_page...")
                     print("Game_page exited")
