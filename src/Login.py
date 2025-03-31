@@ -1,9 +1,11 @@
 import platform
 import subprocess
+import threading
+from threading import Event
 import time
 
 import flet as ft
-from database import user_info, last_Update, Chapter_Quiz, Add_ChapterDB, Add_QuizLVL, Add_Question
+from database import user_info, last_Update, Chapter_Quiz, Add_ChapterDB, Add_QuizLVL, Add_Question, update_DB
 import SignIn
 import os
 from Menu import Menu
@@ -25,6 +27,8 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
+from OTP import send_otp_email as otp
+
 
 # def hash_password(password: str) -> str:
 #     """Hash a password using SHA-256."""
@@ -57,7 +61,10 @@ def load_login_credentials():
 
 username_error = ft.Text("", weight=ft.FontWeight.BOLD, size=15, color="red", visible=True)
 password_error = ft.Text("", weight=ft.FontWeight.BOLD, size=15, color="red", visible=True)
-
+pin = None
+count = 60
+countdown_thread = None
+countdown_event = Event()
 if __name__ == "__main__":
     def main(page: ft.Page):
         page.title = "Login"
@@ -144,6 +151,7 @@ if __name__ == "__main__":
             except:
                 print("❌ Authorization failed: Machine ID is invalid!")
                 return False
+
         USB_path = "D://private_key.pem"
 
         def sign_machine_id(Machine_id):
@@ -214,6 +222,264 @@ if __name__ == "__main__":
             alignment=ft.alignment.top_center,
         )
 
+        def Forgot_pass(e):
+            global pin, count, countdown_event, countdown_thread
+
+            # Create a Text widget to update dynamically
+            countdown_text = ft.Text(
+                spans=[
+                    ft.TextSpan(
+                        f"Resend {count}",
+                        ft.TextStyle(decoration=ft.TextDecoration.UNDERLINE),
+                        on_click=lambda e: resend_otp(e),
+                    )
+                ]
+            )
+
+            def resend_otp(e):
+                """Handle OTP resend request"""
+                global count, countdown_event, countdown_thread
+                print(countdown_thread)
+                if countdown_thread and countdown_thread.is_alive():
+                    print("Stopping existing countdown")
+                    countdown_event.set()
+                    countdown_thread.join(timeout=1)
+                # Stop any existing countdown
+
+                countdown_event = Event()  # Create new event for new countdown
+
+                # Reset count to 60
+                countdown_text.spans[0].text = f"Resend {count}"
+                page.update()
+
+                # Show progress bar
+                progress.visible = True
+                page.update()
+
+                # Send new OTP in background
+                threading.Thread(target=send_otp, daemon=True).start()
+
+                # Restart countdown
+                countdown_thread = threading.Thread(target=update_countdown, daemon=True)
+                countdown_thread.start()
+
+            progress = ft.ProgressBar(visible=False, width=200)
+            proceed = ft.ElevatedButton(content=ft.Text("Next", size=17),
+                                        width=100, bgcolor="#35AD30",
+                                        disabled=True)
+
+            OTP = ft.TextField(
+                label="OTP",
+                input_filter=ft.NumbersOnlyInputFilter(),
+                width=300 * 3,
+                color="#FFFFFF",
+                border_radius=8,
+                on_change=lambda e: update_button(e)
+            )
+
+            def update_button(e):
+                done.disabled = not bool(OTP.value.strip())
+            done = ft.ElevatedButton(
+                content=ft.Text("Done", size=17),
+                bgcolor="#35AD30",
+                disabled=True,
+                width=100
+            )
+
+            # OTP dialog
+            otp_dialog = ft.AlertDialog(
+                content=ft.Column(
+                    [
+                        ft.Text("OTP"),
+                        OTP,
+                        countdown_text,
+                        progress,
+                        ft.Row([done], alignment=ft.MainAxisAlignment.END)
+                    ],
+                    height=160,
+                    width=300
+                )
+            )
+
+            def send_otp(e=None):
+                """Function to send OTP in background"""
+                global pin, count
+                progress.visible = True
+                page.update()
+
+                try:
+                    pin = otp(email.value + "@gmail.com")
+                    print(pin)
+                finally:
+                    count = 60
+                    progress.visible = False
+                    page.update()
+
+            def update_button_state(e):
+                proceed.disabled = not bool(email.value.strip())  # Disable if empty
+                proceed.update()  # Refresh button state
+
+            email = ft.TextField(
+                label="Gmail",
+                suffix_text="@gmail.com",
+                width=300 * 3,
+                color="#FFFFFF",
+                border_radius=8,
+                on_change=update_button_state  # Trigger check on input change
+            )
+
+            email_dialog = ft.AlertDialog(
+                content=ft.Column(
+                    [
+                        ft.Text("Email"),
+                        email,
+                        progress,
+                        ft.Row(controls=[
+                            proceed,
+                        ],
+                            alignment=ft.MainAxisAlignment.END,
+                            width=300
+                        )
+                    ],
+                    alignment=ft.MainAxisAlignment.START,
+                    width=300,
+                    height=120
+                )
+            )
+
+            def on_proceed(e):
+                """Handle proceed button click"""
+                global count, countdown_thread, countdown_event
+                # Show progress immediately
+                if countdown_thread and countdown_thread.is_alive():
+                    print("Stopping existing countdown")
+                    countdown_event.set()
+                    countdown_thread.join(timeout=1)
+
+                progress.visible = True
+                proceed.disabled = True
+                if done:
+                    done.disabled = True
+                page.update()
+                count = 60
+                countdown_event = Event()
+
+                # Send OTP in background
+                threading.Thread(target=send_otp, daemon=True).start()
+
+                # Wait a moment to ensure progress shows
+                time.sleep(3)
+
+                # Open OTP dialog
+                page.dialog = otp_dialog
+                page.open(page.dialog)
+                page.update()
+
+                # Start countdown only if dialog is still open
+                if page.dialog == otp_dialog:
+                    countdown_thread = threading.Thread(target=update_countdown, daemon=True)
+                    countdown_thread.start()
+
+            def verify_otp(e):
+                """Verify the entered OTP"""
+                if pin:
+                    if str(OTP.value) == str(pin):
+                        # Create password change dialog
+                        password = ft.TextField(
+                            width=300,
+                            label="New Password",
+                            password=True
+                        )
+                        confirm_password = ft.TextField(
+                            width=300,
+                            label="Confirm Password",
+                            password=True
+                        )
+
+                        change_button = ft.ElevatedButton(
+                            content=ft.Text("Change", size=17),
+                            bgcolor="#35AD30",
+                            width=100,
+                            disabled=True
+                        )
+
+                        def validate_passwords(e):
+                            change_button.disabled = not (
+                                    password.value and
+                                    password.value == confirm_password.value
+                            )
+                            page.update()
+
+                        def change_password(e):
+                            pass_value = hash_password(confirm_password.value)
+                            update_DB(f"UPDATE [User] SET [Password] = '{pass_value}' WHERE "
+                                      f"Email = '{email.value}@gmail.com'")
+                            page.dialog = ft.AlertDialog(title=ft.Text("Password Changed"))
+                            page.update()
+
+                        password.on_change = validate_passwords
+                        confirm_password.on_change = validate_passwords
+                        change_button.on_click = change_password
+
+                        change_dialog = ft.AlertDialog(
+                            content=ft.Column(
+                                [
+                                    ft.Text("New Password"),
+                                    password,
+                                    ft.Text("Confirm Password"),
+                                    confirm_password,
+                                    ft.Row([change_button], alignment=ft.MainAxisAlignment.END)
+                                ],
+                                width=330,
+                                height=200
+                            )
+                        )
+
+                        page.dialog = change_dialog
+                        page.open(page.dialog)
+                        page.update()
+                    else:
+                        OTP.error_text = "Invalid OTP"
+                        page.update()
+                else:
+                    OTP.error_text = "OTP Expired"
+                    page.update()
+
+            # Assign event handlers
+            proceed.on_click = on_proceed
+            done.on_click = verify_otp
+
+            # Open the dialog
+            page.dialog = email_dialog
+            page.open(page.dialog)
+            page.update()
+
+            # Function to update the countdown every second
+            def update_countdown():
+                global count, pin
+                print(count)
+                while count > 0 and not countdown_event.is_set():
+                    start_time = time.time()
+                    # Update count and UI
+                    count -= 1
+                    countdown_text.spans[0].text = f"Resend {count}" if count > 0 else "Resend OTP"
+                    page.update()
+
+                    # Precise 1-second sleep
+                    elapsed = time.time() - start_time
+                    time.sleep(max(0, 1 - int(elapsed)))
+                pin = 0
+
+        forgot_pass = ft.TextButton(
+            text="Forgot password",
+            on_click=lambda e: Forgot_pass(e)
+        )
+
+        remember_me = ft.Checkbox(
+            label="Remember Me",
+            value=True if os.path.exists("user_credentials.json") else False
+        )
+
         # Define a function to handle navigation
         def route_change(route):
             page.views.clear()
@@ -275,6 +541,10 @@ if __name__ == "__main__":
                                                         horizontal_alignment=ft.CrossAxisAlignment.START,
                                                         width=156.5 * 3
                                                     ),
+                                                    ft.Row(controls=[forgot_pass, remember_me],
+                                                           alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                                           width=156.5 * 3  # Ensure it has enough space
+                                                           ),
                                                     ft.ElevatedButton(
                                                         content=ft.Text("Login", color="white", size=25),
                                                         bgcolor="#35AD30",
@@ -341,7 +611,10 @@ if __name__ == "__main__":
                 if (username, hashed_password) == stored_user:
                     print("✅ Correct Login!")
                     last_Update(i[0])
-                    save_login_credentials(username, password)  # Password is hashed before saving
+                    if not remember_me.value and os.path.exists("user_credentials.json"):
+                        os.remove("user_credentials.json")
+                    else:
+                        save_login_credentials(username, password)  # Password is hashed before saving
                     page.session.set("username", i[1])  # Store username
                     page.session.set("password", i[2])  # Store password
                     page.session.set("user_id", i[0])  # Store user ID for database update
