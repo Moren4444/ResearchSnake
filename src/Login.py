@@ -613,7 +613,7 @@ if __name__ == "__main__":
                     last_Update(i[0])
                     if not remember_me.value and os.path.exists("user_credentials.json"):
                         os.remove("user_credentials.json")
-                    else:
+                    elif remember_me.value:
                         save_login_credentials(username, password)  # Password is hashed before saving
                     page.session.set("username", i[1])  # Store username
                     page.session.set("password", i[2])  # Store password

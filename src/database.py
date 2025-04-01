@@ -30,9 +30,10 @@ def select(query):
     return cursor.fetchall()
 
 
-def update_question(query):
+def update_DB(query):
     cursor.execute(query)
     conn.commit()
+
 
 def last_Update(ID):
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -89,10 +90,17 @@ def select_user(id):
     return cursor.fetchone()
 
 
-def Select(column, table, id):
-    cursor.execute(f"Select {column} from {table} where QuizID = {id}")
-    select = cursor.fetchall()
-    return select
+def Select():
+    try:
+        cursor.execute(f"SELECT "
+                       f"ROW_NUMBER() OVER (ORDER BY ChapterID, LevelRequired) AS NewID,"
+                       f"* "
+                       f"FROM Quiz "
+                       f"ORDER BY ChapterID, LevelRequired;")
+        select = cursor.fetchall()
+        return select
+    except IndexError:
+        return None
 
 
 def profile_info():
@@ -324,4 +332,5 @@ if __name__ == "__main__":
     # print(Add_Question())
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
-    print(select("select * from Quiz where ChapterID = 1"))
+    print()
+    print(select(f"Select QuizID from Question where QuizID = {Select()[2][1]}"))
