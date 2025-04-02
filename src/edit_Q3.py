@@ -7,7 +7,7 @@ from database import (Retrieve_Question, Chapter_Quiz, Update_Question, Delete_Q
 import json
 
 
-def main(page: ft.Page, role, audio1, audio2):
+def main(page: ft.Page, audio1, audio2):
     page.title = "Edit Question"
     # Database setup
     chapter, quiz = Chapter_Quiz()
@@ -282,6 +282,13 @@ def main(page: ft.Page, role, audio1, audio2):
         print(selected_chapter_index, selected_index, current_q_index)
         print(select(f"Select * from Question where QuizID = {selected_index + 1}")[current_q_index])
 
+        # Extract quiz number from dd.value
+        section_key = dd.value.split()[-1]  # This represents the quiz number
+
+        # Ensure section_key (quiz) exists
+        if section_key not in question_saved[chapter_key]:
+            question_saved[chapter_key][section_key] = {}
+
         Answer = "A"
         for i in range(4):
             if option_fields[i].bgcolor == ft.Colors.GREEN:
@@ -294,11 +301,10 @@ def main(page: ft.Page, role, audio1, audio2):
             option_fields[1].value,
             option_fields[2].value,
             option_fields[3].value,
-            dd.value[-2:] if dd.value[-1] == 0 else dd.value[-1],
         ]
 
         # Add question data
-        question_saved[chapter_key][question_id] = data
+        question_saved[chapter_key][section_key][question_id] = data
 
         with open("Quiz_draft2.json", "w") as file:
             json.dump(question_saved, file, indent=4)
@@ -851,7 +857,7 @@ def main(page: ft.Page, role, audio1, audio2):
                 actions=[
                     draft,
                     ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/stu_account_management")),
+                                  on_click=lambda e: page.go("/account_management")),
                     ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/edit_page")),
                     ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
