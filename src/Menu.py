@@ -160,7 +160,8 @@ def Menu(player_info):
                              border_radius=5)
 
             # Draw chapter name
-            chapter_name = font.render(f"Chapter {chapter_id}", True, (255, 255, 255))
+            chapter_name = font.render(f"Chapter {'Additional Chapter' if chapter_id > 9 else chapter_id}",
+                                       True, (255, 255, 255))
             screen.blit(chapter_name, (100, 100 + y_offset))
 
             # Draw quizzes
@@ -182,7 +183,7 @@ def Menu(player_info):
                 pygame.draw.rect(screen, (246, 208, 17), rect, border_radius=5)
                 screen.blit(font.render(str(index + 1), True, (0, 0, 0)), level_pos)
                 # Lock logic
-                if (global_idx + 1) > player_level:
+                if (global_idx + 1) > player_level and chapter_id <= 9:
                     lock_rect = lock_resize.get_rect(center=rect.center)
                     screen.blit(lock_resize, lock_rect.topleft)
 
@@ -207,7 +208,9 @@ def Menu(player_info):
                     # Handle quiz clicks only when the overlay is not active
                     for rect, global_idx in list_of_visible_quizzes:
                         if rect.collidepoint(mouse_pos):
-                            if (global_idx + 1) > player_level:
+                            chapter_id = [c_id for (c_id, q, g_idx) in all_quizzes_global
+                                          if g_idx == global_idx][0]
+                            if (global_idx + 1) > player_level and chapter_id <= 9:
                                 # alert = True  # Show a "Quiz is locked" message
                                 print(f"Quiz {global_idx +1} is locked")
                                 break  # Skip further processing

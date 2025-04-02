@@ -93,10 +93,10 @@ def select_user(id):
 def Select():
     try:
         cursor.execute(f"SELECT "
-                       f"ROW_NUMBER() OVER (ORDER BY ChapterID, LevelRequired) AS NewID,"
+                       f"ROW_NUMBER() OVER (ORDER BY CAST(ChapterID AS INTEGER), LevelRequired) AS NewID,"
                        f"* "
                        f"FROM Quiz "
-                       f"ORDER BY ChapterID, LevelRequired;")
+                       f"ORDER BY CAST(ChapterID AS INTEGER), LevelRequired;")
         select = cursor.fetchall()
         return select
     except IndexError:
@@ -332,6 +332,5 @@ if __name__ == "__main__":
     # print(Add_Question())
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
-    print()
-    check = select(f"Select Question from Question where QuizID = {1}")
-    print("Special Question" in [i[0] for i in check])
+    print(Select())
+    print(select(f"Select QuizID from Question where QuizID = {Select()[1][1]}"))
