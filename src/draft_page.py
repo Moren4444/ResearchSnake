@@ -50,39 +50,45 @@ def draft_page(page: ft.Page, audio1, audio2):
     def delete_draft(e, ID):
         def confirm_delete():
             nonlocal selected_quiz, quiz, selected_chapter, Quiz, sorted_Quiz, sorted_chapter
+            active_edit["index"] = None
+            # Remove the quiz question
             chapter_quizQ[selected_chapter][selected_quiz].pop(str(ID))
-            # If the quiz dictionary becomes empty, remove the quiz key from the chapter
-            print(chapter_quizQ[str(selected_chapter)], selected_chapter)
 
+            # Remove quiz if empty
             if not chapter_quizQ[selected_chapter][selected_quiz]:
                 chapter_quizQ[selected_chapter].pop(selected_quiz)
-                quiz_dd.value = f"Quiz {sorted_Quiz[0]}"
-                selected_quiz = quiz_dd.value.split()[-1]
-                quiz = sorted(
-                    [int(i) for i in chapter_quizQ[str(sorted_chapter[sorted_chapter.index(int(selected_chapter))])]])
-                quiz_dd.options = [ft.dropdown.Option(f"Quiz {i}") for i in quiz]
-                page.update()
 
-            if not chapter_quizQ[str(selected_chapter)]:
+            # Remove chapter if empty
+            if not chapter_quizQ[selected_chapter]:
                 chapter_quizQ.pop(selected_chapter)
-                print("HAI", chapter_quizQ)
-                print(selected_chapter)
 
-                chapter_dd.value = f"Chapter {sorted_chapter[0]}"
-                selected_chapter = chapter_dd.value.split()[-1]
-                chapter_dd.options = [ft.dropdown.Option(f"Chapter {i}") for i in sorted(chapter_quizQ)]
+                # Update chapter selection
+                if chapter_quizQ:
+                    sorted_chapter = sorted(map(int, chapter_quizQ.keys()))
+                    selected_chapter = str(sorted_chapter[0])
+                    chapter_dd.value = f"Chapter {selected_chapter}"
+                    chapter_dd.options = [ft.dropdown.Option(f"Chapter {ch}") for ch in sorted_chapter]
+                else:
+                    selected_chapter = None
+                    chapter_dd.value = "No Chapters"
+                    chapter_dd.options = []
 
-                sorted_chapter = [int(i) for i in sorted(chapter_quizQ)]
-                Quiz = chapter_quizQ[str(sorted_chapter[0])]
-                sorted_Quiz = [int(i) for i in sorted(Quiz)]
-                quiz_dd.value = f"Quiz {sorted_Quiz[0]}"
-                selected_quiz = quiz_dd.value.split()[-1]
-                quiz = sorted(
-                    [int(i) for i in chapter_quizQ[str(sorted_chapter[sorted_chapter.index(int(selected_chapter))])]])
-                quiz_dd.options = [ft.dropdown.Option(f"Quiz {i}") for i in quiz]
-                page.update()
+            # Update quiz selection
+            if selected_chapter and chapter_quizQ.get(selected_chapter):
+                Quiz = chapter_quizQ[selected_chapter]
+                sorted_Quiz = sorted(map(int, Quiz.keys()))
+                selected_quiz = str(sorted_Quiz[0])
+                quiz_dd.value = f"Quiz {selected_quiz}"
+                quiz_dd.options = [ft.dropdown.Option(f"Quiz {qz}") for qz in sorted_Quiz]
+            else:
+                selected_quiz = None
+                quiz_dd.value = "No Quizzes"
+                quiz_dd.options = []
+
+            # Save updated quiz data
             with open("Quiz_draft2.json", "w") as f:
                 json.dump(chapter_quizQ, f, indent=4)
+
             update_column()
             page.update()
 
