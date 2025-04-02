@@ -267,16 +267,17 @@ def main(page: ft.Page, audio1, audio2):
     def Json_save(e):
         nonlocal unsaved_changes
         unsaved_changes = False
-        question_saved = load_login_credentials()
 
         # Ensure JSON structure exists
         chapter_key = str(selected_chapter_index)
         question_id = select(f"Select * from Question where QuizID = {selected_index + 1}")[current_q_index][0]
 
         if not os.path.exists("Quiz_draft2.json"):
-            question_saved = {chapter_key: {question_id: []}}
+            question_saved = {}
         else:
-            question_saved.setdefault(chapter_key, {})  # Ensure chapter exists
+            question_saved = load_login_credentials()
+
+        question_saved.setdefault(chapter_key, {})  # Ensure chapter exists
 
         print(question_saved)
         print(selected_chapter_index, selected_index, current_q_index)
@@ -284,11 +285,7 @@ def main(page: ft.Page, audio1, audio2):
 
         # Extract quiz number from dd.value
         section_key = dd.value.split()[-1]  # This represents the quiz number
-
-        # Ensure section_key (quiz) exists
-        if section_key not in question_saved[chapter_key]:
-            question_saved[chapter_key][section_key] = {}
-
+        question_saved[chapter_key].setdefault(section_key, {})
         Answer = "A"
         for i in range(4):
             if option_fields[i].bgcolor == ft.Colors.GREEN:
@@ -301,10 +298,10 @@ def main(page: ft.Page, audio1, audio2):
             option_fields[1].value,
             option_fields[2].value,
             option_fields[3].value,
+            selected_index + 1
         ]
-
         # Add question data
-        question_saved[chapter_key][section_key][question_id] = data
+        question_saved[chapter_key][section_key][int(question_id)] = data
 
         with open("Quiz_draft2.json", "w") as file:
             json.dump(question_saved, file, indent=4)
@@ -761,7 +758,6 @@ def main(page: ft.Page, audio1, audio2):
         Delete_Chapter(len(chapter_quizzes), list_quiz_chapter)
         chapter_quizzes.popitem()
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
-        print("Testing: ", chapter_quizzes)
         if chapter_dd.value == f"Chapter {len(chapter_quizzes) + 1}":
             chapter_dd.value = "Chapter 1"
             quiz_name.value = chapter_quizzes[1][0][1]
