@@ -34,6 +34,7 @@ class Option:
 
                 # Check if the position is already used
                 if position not in used_positions:
+                    print("Overlap")
                     used_positions.add(position)  # Mark this position as used
                     break  # Exit the loop once a unique position is found
 
@@ -71,10 +72,18 @@ class Option:
                 screen.blit(button["pushed_image"], (button["x"], button["y"]))
 
     def reset_button_positions(self):
-        """Reset button positions to new random coordinates."""
+        """Reset button positions to new random coordinates without overlapping."""
+        used_positions = set()
         for button in self.buttons:
-            button["x"] = random.randrange(680, 1020, 40)
-            button["y"] = random.randrange(92, 692, 40)
+            while True:
+                x = random.randrange(680, 1020, 40)
+                y = random.randrange(92, 692, 40)
+                position = (x, y)
+                if position not in used_positions:
+                    used_positions.add(position)
+                    button["x"] = x
+                    button["y"] = y
+                    break
 
 
 class Buttons:

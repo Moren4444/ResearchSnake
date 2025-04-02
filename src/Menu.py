@@ -1,5 +1,5 @@
 import pygame
-from database import Chapter_Quiz, Select
+from database import Chapter_Quiz, Select, select
 from Result import wrap_text_word_based
 import sys
 import os
@@ -24,11 +24,18 @@ def resource_path(relative_path):
 
 def Menu(player_info):
     pygame.init()
+    pygame.mixer.init()
     running = True
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
     close = pygame.image.load(resource_path("assets/close.png"))  # Use resource_path
     lock = pygame.image.load(resource_path("assets/locked.png"))  # Use resource_path
     lock_resize = pygame.transform.scale(lock, (140, 140))
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS  # PyInstaller's temp extraction path
+    else:
+        base_path = os.path.dirname(__file__)  # Normal script execution path
+    click_path = os.path.join(base_path, "assets", "Click_Audio.mp3")
+    click_sound = pygame.mixer.Sound(click_path)
 
     close_resize = pygame.transform.scale(close, (30, 30))
     close_rect = close_resize.get_rect(topleft=(1200, 55))
@@ -60,7 +67,7 @@ def Menu(player_info):
         arrows = pygame.transform.scale(arrows, (32 * 2, 32 * 2))
         return [arrows, arrows.get_rect(topleft=position)]
 
-    available_question_quiz = Select("QuizID", "Question", 1)
+    available_question_quiz = Select()
     print("Available", available_question_quiz)
     overlay = pygame.Surface((1280, 800), pygame.SRCALPHA)  # Enable per-pixel alpha
     overlay.fill((0, 0, 0, 130))  # RGBA: Black with 100/255 transparency
@@ -187,6 +194,7 @@ def Menu(player_info):
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+                click_sound.play()
                 if alert:
                     # Close the overlay if clicked anywhere
                     if overlay_rect.collidepoint(mouse_pos):
@@ -208,8 +216,8 @@ def Menu(player_info):
                             print(f"Quiz {global_idx  + 1} clicked!")
                             quiz_level = global_idx
                             # print(quiz[quiz_level])
-                            print(available_question_quiz)
-                            if Select("QuizID", "Question", quiz_level + 1):
+                            print(quiz_level)
+                            if select(f"Select QuizID from Question where QuizID = {Select()[quiz_level][1]}"):
                                 print("Yes")
                                 char_index_title = 0
                                 char_index_description = 0
@@ -222,9 +230,8 @@ def Menu(player_info):
                     if close_rect.collidepoint(mouse_pos):
                         menu_open = False
                     if play_button.collidepoint(mouse_pos):
-                        print("Quiz: ", quiz[quiz_level])
                         selected_quiz = all_quizzes_global[quiz_level][1]  # (chap_id, q_data, g_idx)
-                        page_menu(player_info, selected_quiz, return_to_menu, resource_path, quiz_level+1)
+                        page_menu(player_info, selected_quiz, return_to_menu, resource_path, quiz_level+1, click_sound)
                         pygame.display.quit()
                         # Run Page-Menu.py and pass quiz[quiz_level] as a command-line argument
                         # subprocess.run([sys.executable, "Page-Menu.py", str(quiz[quiz_level]), str(player_info)])

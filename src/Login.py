@@ -1,3 +1,4 @@
+import asyncio
 import platform
 import subprocess
 import threading
@@ -11,12 +12,9 @@ import os
 from Menu import Menu
 import json
 import edit_Q3
-import AdminAccountManagement
+import AccountManagement
 import Profile
-import AddUser_Admin
-import AddUser_Owner
-import OwnerAccountManagement
-import OwnerProfile
+import AddUser
 from dotenv import load_dotenv
 import sys
 import getpass
@@ -85,14 +83,24 @@ if __name__ == "__main__":
         current_user = getpass.getuser()  # Get current username
         current_hostname = platform.node()  # Get current device name
         dotenv_path = os.path.join(os.getenv("APPDATA"), "Owner Store", ".env")  # Get correct .env path
+
         background_path = os.path.join(base_path, "assets", "Background_audio.mp3")
         audio1 = ft.Audio(
             src=background_path, autoplay=True
         )
+
         forest_image_path = os.path.join(base_path, "assets", "Forest.png")
         logo_path = os.path.join(base_path, "assets", "ResearchSnake.png")
         click_path = os.path.join(base_path, "assets", "Click_Audio.mp3")
         page.overlay.append(audio1)
+        page.update()
+
+        def restart_audio():
+            print("Play again")
+            audio1.play()
+            threading.Timer(60, restart_audio).start()
+        restart_audio()  # Start the looping
+
         audio2 = ft.Audio(
             src=click_path,
             volume=1.0,  # Ensure the volume is high enough
@@ -100,11 +108,12 @@ if __name__ == "__main__":
         )
         page.overlay.append(audio2)
 
-        def play_click_sound(e):
+        def play_click_sound(e=None):
             if audio2 not in page.overlay:
                 page.overlay.append(audio2)  # Add audio control first
                 page.update()  # Ensure it's recognized by the UI
             audio2.play()  # Now play it
+            page.update()
 
         # Debugging messages (Make sure this prints in CMD/terminal)
         print(f"🔍 Debug: Running as {current_user} on {current_hostname}")
@@ -471,7 +480,10 @@ if __name__ == "__main__":
                 pin = 0
 
         forgot_pass = ft.TextButton(
-            text="Forgot password",
+            content=ft.Container(
+                content=ft.Text("Forgot Password", weight=ft.FontWeight.BOLD, size=17, color="#FFFFFF"),
+                bgcolor="#4d1c2e"
+            ),
             on_click=lambda e: Forgot_pass(e)
         )
 
@@ -491,20 +503,13 @@ if __name__ == "__main__":
                 page.views.append(draft_page.draft_page(page, audio1, audio2))
             elif page.route == "/edit_page":
                 page.overlay.clear()
-                page.views.append(edit_Q3.main(page, role, audio1, audio2))
-            elif page.route == "/stu_account_management":
-                page.views.append(AdminAccountManagement.stu_account_management(page, audio1, audio2))
+                page.views.append(edit_Q3.main(page, audio1, audio2))
             elif page.route == "/profile_management":
-                page.views.append(Profile.profile_management(page, audio1, audio2))
-            elif page.route == "/add_new_stu":
-                page.views.append(AddUser_Admin.new_student(page, audio1, audio2))
-            elif page.route == "/admin_account_management":
-                page.views.append(OwnerAccountManagement.admin_account_management(page))
-            elif page.route == "/add_new_admin":
-                page.views.append(AddUser_Owner.new_admin(page))
-            elif page.route == "/owner_profile_management":
-                page.overlay.clear()
-                page.views.append(OwnerProfile.owner_profile_management(page, role, audio1, audio2))
+                page.views.append(Profile.profile_management(page, role, audio1, audio2))
+            elif page.route == "/add_new_user":
+                page.views.append(AddUser.new_user(page, role, audio1, audio2))
+            elif page.route == "/account_management":
+                page.views.append(AccountManagement.account_management(page, role, audio1, audio2))
             else:
                 page.views.append(login_view(page))
 
@@ -527,42 +532,52 @@ if __name__ == "__main__":
                                             content=ft.Column(
                                                 [
                                                     logo_container,
-                                                    username_field,  # Use the defined input field
-                                                    ft.Column(
-                                                        [username_error],
-                                                        alignment=ft.alignment.center_left,
-                                                        horizontal_alignment=ft.CrossAxisAlignment.START,
-                                                        width=156.5 * 3
-                                                    ),
-                                                    password_field,
-                                                    ft.Column(
-                                                        [password_error],
-                                                        alignment=ft.alignment.center_left,
-                                                        horizontal_alignment=ft.CrossAxisAlignment.START,
-                                                        width=156.5 * 3
-                                                    ),
-                                                    ft.Row(controls=[forgot_pass, remember_me],
-                                                           alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                                                           width=156.5 * 3  # Ensure it has enough space
-                                                           ),
-                                                    ft.ElevatedButton(
-                                                        content=ft.Text("Login", color="white", size=25),
-                                                        bgcolor="#35AD30",
-                                                        width=84 * 3,
-                                                        height=20 * 3,
-                                                        # Call submit() on click
-                                                        on_click=lambda e: [play_click_sound(e), submit(e)]
-                                                    ),
-                                                    ft.TextButton(
-                                                        content=ft.Text("Sign Up", color="white", size=25),
-                                                        on_click=lambda e: [play_click_sound(e),
-                                                                            pages.go("/signin")]
+                                                    ft.Container(
+                                                        content=ft.Column(
+                                                            [
+                                                                username_field,  # Use the defined input field
+                                                                ft.Column(
+                                                                    [username_error],
+                                                                    alignment=ft.alignment.center_left,
+                                                                    horizontal_alignment=ft.CrossAxisAlignment.START,
+                                                                    width=156.5 * 3
+                                                                ),
+                                                                password_field,
+                                                                ft.Column(
+                                                                    [password_error],
+                                                                    alignment=ft.alignment.center_left,
+                                                                    horizontal_alignment=ft.CrossAxisAlignment.START,
+                                                                    width=156.5 * 3
+                                                                ),
+                                                                ft.Row(controls=[forgot_pass, remember_me],
+                                                                       alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                                                       width=156.5 * 3  # Ensure it has enough space
+                                                                       ),
+                                                                ft.ElevatedButton(
+                                                                    content=ft.Text("Login", color="white", size=25),
+                                                                    bgcolor="#35AD30",
+                                                                    width=84 * 3,
+                                                                    height=20 * 3,
+                                                                    # Call submit() on click
+                                                                    on_click=lambda e: [play_click_sound(e), submit(e)]
+                                                                ),
+                                                                ft.TextButton(
+                                                                    content=ft.Text("Sign Up", color="white", size=25),
+                                                                    on_click=lambda e: [play_click_sound(e),
+                                                                                        pages.go("/signin")]
+                                                                )
+                                                            ],
+                                                            spacing=10,
+                                                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                                        ),
+                                                        bgcolor="#4d1c2e",
+                                                        padding=20,
+                                                        border_radius=10,
                                                     )
-                                                ],
-                                                spacing=10,
-                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                                 ],
+                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER
                                             )
-                                        )
+                                        ),
                                     ],
                                     alignment=ft.MainAxisAlignment.CENTER,
                                     expand=True,  # Critical for centering
@@ -593,7 +608,7 @@ if __name__ == "__main__":
                 if hashed_password == OWNER_KEY:
                     role = "Owner"
                     print("🔑 Owner access granted via special key!")
-                    page.go("/owner_profile_management")
+                    page.go("/profile_management")
                     return
             # Validate input
             if username == "":

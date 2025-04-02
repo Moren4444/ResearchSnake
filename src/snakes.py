@@ -227,19 +227,16 @@ class Game:
         # Return whether time has run out
         return remaining <= 0
 
-    def _animated_text(self, sentence, font, x, y, space_between, max_width, animation_duration=500):
-        """Animate text appearance over a specified duration in milliseconds"""
-        # Create unique identifier for each text instance
+    def _animated_text(self, sentence, font, x, y, space_between, max_width, char_rate=20):
+        """Animate text appearance at a constant speed (characters per second)."""
         text_key = (sentence, x, y)
 
-        # Initialize animation state if not exists
+        # Initialize animation state if it doesn't exist
         if not hasattr(self, '_anim_states'):
             self._anim_states = {}
-
         if text_key not in self._anim_states:
             self._anim_states[text_key] = {
                 'start_time': pygame.time.get_ticks(),
-                'duration': animation_duration,
                 'lines': [],
                 'current_line': '',
                 'current_line_width': 0,
@@ -249,27 +246,24 @@ class Game:
             }
 
         state = self._anim_states[text_key]
-
-        # Calculate animation progress (0.0 to 1.0)
         elapsed = pygame.time.get_ticks() - state['start_time']
-        progress = min(1.0, elapsed / state['duration'])
 
-        # Calculate how many characters should be visible
-        total_chars = len(sentence)
-        visible_chars = int(progress * total_chars)
+        # Determine how many characters should be visible based on a constant rate.
+        visible_chars = int((elapsed / 1000.0) * char_rate)
+        visible_chars = min(visible_chars, len(sentence))  # Do not exceed total text length
 
-        # Process the visible portion of text
+        # Only reprocess if animation is not completed
         if not state['completed']:
             visible_text = sentence[:visible_chars]
 
-            # Reset state for reprocessing
+            # Reset state for reprocessing the visible text
             state['lines'] = []
             state['current_line'] = ''
             state['current_line_width'] = 0
             state['current_word'] = ''
             state['current_word_width'] = 0
 
-            # Process each character in visible text
+            # Process each character in the visible text
             for char in visible_text:
                 char_width = font.size(char)[0]
 
@@ -301,19 +295,21 @@ class Game:
                         state['current_word'] = new_word
                         state['current_word_width'] = new_word_width
 
-            state['completed'] = (progress >= 1.0)
+            # If we have displayed all characters, mark as completed.
+            if visible_chars == len(sentence):
+                state['completed'] = True
 
-        # Draw all lines
+        # Draw all complete lines
         current_y = y
         for line in state['lines']:
             text_surf = font.render(line, True, (0, 0, 0))
             self.screen.blit(text_surf, (x + space_between, current_y + space_between))
             current_y += text_surf.get_height() + space_between
 
-        # Draw current line + current word
+        # Draw the current line (including the word in progress)
         current_text = state['current_line'] + (
             ' ' + state['current_word'] if state['current_line'] else state['current_word'])
-        if current_text.strip():  # Only draw if there's visible text
+        if current_text.strip():
             text_surf = font.render(current_text, True, (0, 0, 0))
             self.screen.blit(text_surf, (x + space_between, current_y + space_between))
 

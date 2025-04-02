@@ -6,7 +6,7 @@ from Result_2 import result
 # from Menu import Menu
 
 
-def Game_page(player_info, difficulties, return_menu, resource_path, chapter_info, quiz_level):
+def Game_page(player_info, difficulties, return_menu, resource_path, chapter_info, quiz_level, click):
     pygame.init()
     running = True
     fullscreen = True
@@ -99,6 +99,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             open_setting = True
                             game.pause()  # Pause timer when opening the menu
                 elif event.type == pygame.MOUSEBUTTONDOWN:
+                    click.play()
                     if game_over:
                         if Restart_rect_over.collidepoint(event.pos):
                             try:
@@ -146,7 +147,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         elif Restart_rect.collidepoint(event.pos):
                             try:
                                 body_count = 3
-                                game = Game(800, 412, screen, 1, 10000, resource_path)  # Reinitialize the game
+                                game = Game(800, 412, screen, 1, 10000, resource_path, difficulties)  # Reinitialize the game
                                 is_alive = True
                                 open_setting = False
                                 game_over = False

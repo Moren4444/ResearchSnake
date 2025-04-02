@@ -333,4 +333,5 @@ if __name__ == "__main__":
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
     print()
-    print(select(f"Select QuizID from Question where QuizID = {Select()[2][1]}"))
+    check = select(f"Select Question from Question where QuizID = {1}")
+    print("Special Question" in [i[0] for i in check])
