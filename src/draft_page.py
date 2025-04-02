@@ -2,7 +2,7 @@ import json
 import os.path
 
 import flet as ft
-from database import select, update_question
+from database import select, update_DB
 
 
 def draft_page(page: ft.Page, audio1, audio2):
@@ -10,9 +10,15 @@ def draft_page(page: ft.Page, audio1, audio2):
     if os.path.exists("Quiz_draft2.json"):
         with open("Quiz_draft2.json") as file:
             chapter_quizQ = json.load(file)
+    sort = sorted(chapter_quizQ)[0]
+    selected_chapter = f"Chapter {sort}".split()[-1]
 
-    print("Chapter ", sorted(chapter_quizQ)[0])
-    print("Quiz ", [sorted(i[-1])[0] for i in chapter_quizQ[sorted(chapter_quizQ)[0]].values()][0])
+    selected_quiz = f"Quiz {sorted(chapter_quizQ[sort])[int(selected_chapter) - 1]}".split()[-1]
+    sorted_chapter = sorted(chapter_quizQ)[int(selected_chapter) - 1]
+    Quiz = chapter_quizQ[sorted_chapter]
+    sorted_Quiz = sorted(Quiz)[int(selected_quiz) - 1]
+    Question = chapter_quizQ[sorted_chapter][sorted_Quiz]
+    # print("Quiz ", [sorted(i[-1])[0] for i in chapter_quizQ[sorted(chapter_quizQ)[0]].values()][0])
     cl = ft.Column(
         spacing=25,
         height=500,
@@ -21,24 +27,23 @@ def draft_page(page: ft.Page, audio1, audio2):
     )
 
     chapter_dd = ft.Dropdown(
-        value=f"Chapter {sorted(chapter_quizQ)[0]}",
+        value=f"Chapter {sorted_chapter}",
         border_radius=5,
         bgcolor="#000000",
         width=200,
         border_color="#FFFFFF",
         options=[ft.dropdown.Option(f"Chapter {i}") for i in sorted(chapter_quizQ)]
     )
-    quiz = list(dict.fromkeys(sorted(i[-1])[0] for i in chapter_quizQ[sorted(chapter_quizQ)[0]].values()))
+    quiz = sorted([int(i) for i in chapter_quizQ[sorted_chapter]])
     quiz_dd = ft.Dropdown(
-        value=f"Quiz {quiz[0]}",
+        value=f"Quiz {sorted_Quiz}",
         border_radius=5,
         bgcolor="#000000",
         width=200,
         border_color="#FFFFFF",
         options=[ft.dropdown.Option(f"Quiz {i}") for i in quiz]
     )
-    selected_chapter = f"Chapter {sorted(chapter_quizQ)[0]}".split()[-1]
-    selected_quiz = quiz_dd.value[-1] if quiz_dd.value[-1] != "0" else quiz_dd.value[-2:]
+
     questions = []
     options_map = {"A": 0, "B": 1, "C": 2, "D": 3}
 
@@ -48,8 +53,9 @@ def draft_page(page: ft.Page, audio1, audio2):
             print(chapter_quizQ)
             with open("Quiz_draft2.json", "w") as f:
                 json.dump(chapter_quizQ, f, indent=4)
-            update_column(selected_quiz)
+            update_column()
             page.update()
+
         confirm_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Confirm Delete"),
@@ -61,31 +67,6 @@ def draft_page(page: ft.Page, audio1, audio2):
             actions_alignment=ft.MainAxisAlignment.END,
         )
         page.open(confirm_dialog)
-
-    for index, (questionID, question) in enumerate(chapter_quizQ[selected_chapter].items()):
-        if int(selected_quiz) == int(question[-1]):
-            option_details = chapter_quizQ[selected_chapter][str(questionID)][2:6]
-            answer = option_details[options_map.get(question[1], 3)]
-            questions.append(questionID)
-            cl.controls.append(
-                ft.GestureDetector(
-                    content=ft.Container(
-                        content=ft.Text(
-                            value=f"{question[0]}\nAnswer: {answer}",
-                            size=23,
-                            color="#FFFFFF"
-                        ),
-                        padding=10,
-                        border_radius=5,
-                        border=ft.border.all(1, "#FFFFFF"),
-                        width=700
-                    ),
-                    on_tap=lambda e, q=questionID, i=index: handle_question_tap(q, i),
-                    on_double_tap=lambda e, q=questionID: handle_question_double_tap(q),
-                    on_secondary_tap=lambda e, q=questionID: delete_draft(e, q),
-                )
-            )
-    # Track the currently inserted edit container (if any)
     active_edit = {"index": None, "question_id": None}
 
     def remove_existing_editor():
@@ -105,12 +86,11 @@ def draft_page(page: ft.Page, audio1, audio2):
         if active_edit["question_id"] == question_id:
             return
         remove_existing_editor()  # Remove any editor currently displayed
-
         # Retrieve current question details
-        quest_details = chapter_quizQ[selected_chapter][str(question_id)]
+        quest_details = chapter_quizQ[selected_chapter][selected_quiz][str(question_id)]
         current_question = quest_details[0]
-        Option_details = chapter_quizQ[selected_chapter][str(question_id)][2:6]
-        current_answer = chapter_quizQ[selected_chapter][str(question_id)][1]
+        Option_details = quest_details[2:]
+        current_answer = quest_details[1]
 
         # Create editable fields prepopulated with current question and answer
         Edit_question = ft.TextField(
@@ -158,9 +138,8 @@ def draft_page(page: ft.Page, audio1, audio2):
                 current_options[1],
                 current_options[2],
                 current_options[3],
-                selected_quiz
             ]
-            chapter_quizQ[selected_chapter][str(question_id)] = data
+            chapter_quizQ[selected_chapter][selected_quiz][str(question_id)] = data
             with open("Quiz_draft2.json", "w") as f:
                 json.dump(chapter_quizQ, f, indent=4)
             save_snack = ft.SnackBar(
@@ -171,7 +150,7 @@ def draft_page(page: ft.Page, audio1, audio2):
 
             page.open(save_snack)
             remove_existing_editor()
-            update_column(selected_quiz)
+            update_column()
             page.update()
 
         def publish(e):
@@ -181,11 +160,11 @@ def draft_page(page: ft.Page, audio1, audio2):
             # Find which option is green (correct answer)
             correct_index = next((i for i, opt in enumerate(option_fields) if opt.bgcolor == ft.colors.GREEN), 0)
             correct_answer = chr(65 + correct_index)  # Convert to A-D
-            update_question(f"Update Question set "
-                            f"Question = {Current_question}, CorrectAnswer = {correct_answer}, "
-                            f"Option1 = {current_options[0]}, Option2 = {current_options[1]}, "
-                            f"Option3 = {current_options[2]}, Option4 = {current_options[3]} "
-                            f"where QuestionID = {question_id}")
+            update_DB(f"Update Question set "
+                      f"Question = '{Current_question}', CorrectAnswer = '{correct_answer}', "
+                      f"Option1 = '{current_options[0]}', Option2 = '{current_options[1]}', "
+                      f"Option3 = '{current_options[2]}', Option4 = '{current_options[3]}' "
+                      f"where QuestionID = {question_id}")
             publish_snack = ft.SnackBar(
                 ft.Text("Changes saved!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
                 bgcolor="#242323",
@@ -222,53 +201,63 @@ def draft_page(page: ft.Page, audio1, audio2):
             ),
             margin=ft.margin.only(top=10)
         )
-        print(idx)
         # Insert the edit_container right after the tapped question (at index idx+1)
         cl.controls.insert(idx + 1, new_edit_container)
         active_edit["index"] = idx
         active_edit["question_id"] = question_id
         page.update()
 
-    def update_column(selected_QZ):
+    def update_column():
+        nonlocal sorted_Quiz, Question, sorted_chapter
         cl.controls.clear()
         questions.clear()
         remove_existing_editor()
-        for Index, (QID, Quest) in enumerate(chapter_quizQ[selected_chapter].items()):
-            if int(selected_QZ) == int(Quest[-1]):
-                Option_details = chapter_quizQ[selected_chapter][str(QID)][2:6]
-                Answer = Option_details[options_map.get(Quest[1], 3)]
-                questions.append(QID)
-                cl.controls.append(
-                    ft.GestureDetector(
-                        content=ft.Container(
-                            content=ft.Text(
-                                value=f"{Quest[0]}\nAnswer: {Answer}",
-                                size=23,
-                                color="#FFFFFF"
-                            ),
-                            padding=10,
-                            border_radius=5,
-                            border=ft.border.all(1, "#FFFFFF"),
-                            width=700,
+        sorted_chapter = sorted(chapter_quizQ)[int(selected_chapter) - 1]
+        sorted_Quiz = sorted(Quiz)[int(selected_quiz) - 1]
+        Question = chapter_quizQ[sorted_chapter][sorted_Quiz]
+        for Index, (QID, Quest) in enumerate(Question.items()):
+            Option_details = Quest[2:]
+            Answer = Option_details[options_map.get(Quest[1], 3)]
+            questions.append(QID)
+            cl.controls.append(
+                ft.GestureDetector(
+                    content=ft.Container(
+                        content=ft.Text(
+                            value=f"{Quest[0]}\nAnswer: {Answer}",
+                            size=23,
+                            color="#FFFFFF"
                         ),
-                        on_tap=lambda e, q=QID, i=Index: handle_question_tap(q, i),
-                        on_double_tap=lambda e, q=QID, i=Index: handle_question_double_tap(q),
-                        on_secondary_tap=lambda e, q=QID: delete_draft(e, q),
-                    )
+                        padding=10,
+                        border_radius=5,
+                        border=ft.border.all(1, "#FFFFFF"),
+                        width=700,
+                    ),
+                    on_tap=lambda e, q=QID, i=Index: handle_question_tap(q, i),
+                    on_double_tap=lambda e, q=QID, i=Index: handle_question_double_tap(q),
+                    on_secondary_tap=lambda e, q=QID: delete_draft(e, q),
                 )
+            )
         page.update()  # 🔥 Ensure UI refreshes after changes
 
+    update_column()
+
     def dropdown_change(e):
-        nonlocal selected_chapter, selected_quiz, quiz
+        nonlocal selected_chapter, selected_quiz, quiz, sort, sorted_chapter
 
         selected_chapter = chapter_dd.value.split()[-1]
         chapter_key = selected_chapter.split()[-1]
-        quiz = list(dict.fromkeys(sorted(i[-1])[0] for i in chapter_quizQ[chapter_key].values()))
+        sort = sorted(chapter_quizQ[chapter_key])
+        sorted_chapter = sorted(chapter_quizQ)[int(selected_chapter) - 1]
+        temp = quiz
+        quiz = sorted([int(i) for i in chapter_quizQ[sorted_chapter]])
         active_edit["index"] = None
-        quiz_dd.options = [ft.dropdown.Option(f"Quiz {i}") for i in sorted(quiz)]
-        # quiz_dd.value = f"Quiz {quiz[0]}"
+        if temp != quiz:
+            quiz_dd.value = f"Quiz {quiz[0]}"
+        page.update()
+        quiz_dd.options = [ft.dropdown.Option(f"Quiz {i}") for i in quiz]
+
         selected_quiz = quiz_dd.value.split()[-1]
-        update_column(selected_quiz)
+        update_column()
 
     chapter_dd.on_change = dropdown_change
     quiz_dd.on_change = dropdown_change
@@ -304,7 +293,7 @@ def draft_page(page: ft.Page, audio1, audio2):
                     ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/draft_page")),
                     ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/stu_account_management")),
+                                  on_click=lambda e: page.go("/account_management")),
                     ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda e: page.go("/edit_page")),
                     ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
