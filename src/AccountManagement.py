@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import flet as ft
 from database import admin_profile_info, stu_profile_info, delete_user
+from admin import AdminPage
 
 
 def account_management(page: ft.Page, role, audio1, audio2):
@@ -18,6 +19,8 @@ def account_management(page: ft.Page, role, audio1, audio2):
     #     table.rows = create_rows()
     #     toggle_button.icon = ft.Icons.REMOVE_RED_EYE if password_visible else ft.Icons.REMOVE_RED_EYE_OUTLINED
     #     page.update()
+    Admin = AdminPage(page, role, audio1, audio2, "/account_management")
+    Hedr = Admin.hedrNavFdbkBx
 
     def delete_user_action(user_id):
         print(f"Attempting to delete user with ID: {user_id}")
@@ -114,28 +117,15 @@ def account_management(page: ft.Page, role, audio1, audio2):
         draft.disabled = True
 
     def app_bar():
-        return ft.AppBar(
-            title=ft.Text("Add New User", color="white"),
-            bgcolor="#222222",
-            actions=[
-                *([draft] if role == "Admin" else []),
-                ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                              on_click=lambda e: page.go("/account_management")),
-                *([ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
-                                 on_click=lambda e: page.go("/edit_page"))] if role != "Owner" else []),
-                ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
-                              on_click=lambda e: page.go("/profile_management")),
-                ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: [
-                    page.overlay.append(audio1), page.overlay.append(audio2), page.go("/")]),
-            ],
-        )
+        return Admin.page.appbar
 
     return ft.View(
         "/account_management",
         padding=20,
         bgcolor="#343434",
         appbar=app_bar(),
-        controls = [
+        controls=[
+            Hedr,
             ft.Row([table], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([add_user_button], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([back_button], alignment=ft.MainAxisAlignment.CENTER),

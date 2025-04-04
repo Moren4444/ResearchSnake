@@ -2,12 +2,14 @@ import os
 
 import flet as ft
 from database import update_user, select_user  # Ensure this function exists in database.py
+from admin import AdminPage
 
 
 def profile_management(page: ft.Page, role, audio1, audio2):
     username = page.session.get("username")
     password = page.session.get("password")
     user_id = page.session.get("user_id")
+
     # Retrieve user information from the database
 
     if role == "Admin":
@@ -19,7 +21,8 @@ def profile_management(page: ft.Page, role, audio1, audio2):
         email = "N/A"
         reg_date = "N/A"
         lastLogin_date = "N/A"
-
+    Admin = AdminPage(page, role, audio1, audio2, "/profile_management")
+    Hedr = Admin.hedrNavFdbkBx
     username_field = ft.TextField(
         label="Username",
         value=username,
@@ -73,21 +76,7 @@ def profile_management(page: ft.Page, role, audio1, audio2):
         draft.disabled = True
 
     def app_bar():
-        return ft.AppBar(
-            title=ft.Text("Add New User", color="white"),
-            bgcolor="#222222",
-            actions=[
-                *([draft] if role == "Admin" else []),
-                ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                              on_click=lambda e: page.go("/account_management")),
-                *([ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
-                                 on_click=lambda e: page.go("/edit_page"))] if role != "Owner" else []),
-                ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
-                              on_click=lambda e: page.go("/profile_management")),
-                ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: [
-                    page.overlay.append(audio1), page.overlay.append(audio2), page.go("/")]),
-            ],
-        )
+        return Admin.page.appbar
 
     return ft.View(
         route="/profile_management",
@@ -95,7 +84,7 @@ def profile_management(page: ft.Page, role, audio1, audio2):
         bgcolor="#343434",
         appbar=app_bar(),
         controls=
-        [
+        [Hedr,
             ft.Container(
                 content=ft.Column(
                     [

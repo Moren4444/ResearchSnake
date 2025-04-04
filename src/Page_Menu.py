@@ -1,10 +1,10 @@
 import pygame
-from Result import wrap_text_word_based
+from Result_2 import wrap_text_word_based
 import sys
 from Game_page import Game_page
 
 
-def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path, quiz_level):
+def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path, quiz_level, click):
     pygame.init()
     running = True
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
@@ -58,6 +58,7 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
                 if event.key == pygame.K_ESCAPE:
                     running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
+                click.play()
                 if arrow_rect.collidepoint(event.pos):
                     Push = "pushed"
                 if Easy_rect.collidepoint(event.pos):
@@ -73,7 +74,8 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
                     print("Start button clicked")
                     running = False  # Exit the current Pygame loop
                     print(selected)
-                    Game_page(player_info, selected[1], return_to_menu_callback, resource_path, chapter_info, quiz_level)
+                    Game_page(player_info, selected[1], return_to_menu_callback, resource_path,
+                              chapter_info, quiz_level, click)
                     pygame.display.quit()  # Close the current Pygame window
                     print("Launching Game_page...")
                     print("Game_page exited")

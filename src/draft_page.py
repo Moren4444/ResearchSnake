@@ -1,6 +1,6 @@
 import json
 import os.path
-
+from admin import AdminPage
 import flet as ft
 from database import select, update_DB
 
@@ -10,20 +10,23 @@ def draft_page(page: ft.Page, audio1, audio2):
     if os.path.exists("Quiz_draft2.json"):
         with open("Quiz_draft2.json") as file:
             chapter_quizQ = json.load(file)
-    sort = sorted(chapter_quizQ)[0]
-    selected_chapter = f"Chapter {sort}".split()[-1]
+    sorted_chapter = sorted(int(ch) for ch in chapter_quizQ.keys())
+    selected_chapter = str(sorted_chapter[0])
 
-    selected_quiz = f"Quiz {sorted(chapter_quizQ[sort])[int(selected_chapter) - 1]}".split()[-1]
-    sorted_chapter = [int(i) for i in sorted(chapter_quizQ)]
-    Quiz = chapter_quizQ[str(sorted_chapter[0])]
+    Quiz = chapter_quizQ[selected_chapter]
     sorted_Quiz = [int(i) for i in sorted(Quiz)]
-    Question = chapter_quizQ[str(sorted_chapter[0])][str(sorted_Quiz[0])]
+    selected_quiz = str(sorted_Quiz[0])  # Again, convert back to string
+
+    # Get the first question from the selected chapter and quiz
+    Question = chapter_quizQ[selected_chapter][selected_quiz]
+    Admin = AdminPage(page, "Admin", audio1, audio2, "/draft_page")
+    Hedr = Admin.hedrNavFdbkBx
     # print("Quiz ", [sorted(i[-1])[0] for i in chapter_quizQ[sorted(chapter_quizQ)[0]].values()][0])
     cl = ft.Column(
         spacing=25,
         height=500,
-        width=700,
-        scroll=ft.ScrollMode.ALWAYS
+        width=1200,
+        scroll=ft.ScrollMode.ALWAYS,
     )
 
     chapter_dd = ft.Dropdown(
@@ -52,8 +55,20 @@ def draft_page(page: ft.Page, audio1, audio2):
             nonlocal selected_quiz, quiz, selected_chapter, Quiz, sorted_Quiz, sorted_chapter
             active_edit["index"] = None
             # Remove the quiz question
+            print(chapter_quizQ)
+            print("ID: ", ID, len(chapter_quizQ[selected_chapter][selected_quiz][ID]))
+            if (len(chapter_quizQ) == 1 and
+                    len(chapter_quizQ[selected_chapter]) == 1 and
+                    len(chapter_quizQ[selected_chapter][selected_quiz]) == 1):
+                os.remove("Quiz_draft2.json")
+                info_dialog = ft.AlertDialog(
+                    title=ft.Text("Draft Deleted"),
+                    on_dismiss=lambda e: page.go("/edit_page")  # ← navigate only after dismissed
+                )
+                page.dialog = info_dialog
+                page.open(page.dialog)
+                return
             chapter_quizQ[selected_chapter][selected_quiz].pop(str(ID))
-
             # Remove quiz if empty
             if not chapter_quizQ[selected_chapter][selected_quiz]:
                 chapter_quizQ[selected_chapter].pop(selected_quiz)
@@ -132,17 +147,17 @@ def draft_page(page: ft.Page, audio1, audio2):
         Edit_question = ft.TextField(
             label="Edit Question",
             value=current_question,
-            width=400,
-            min_lines=3,
-            max_lines=3,
+            width=800,
+            min_lines=4,
+            max_lines=4,
             border_color="#FFFFFF",
-            text_style=ft.TextStyle(color="#FFFFFF")
+            text_style=ft.TextStyle(color="#FFFFFF", size=20)
         )
         option_fields = [
             ft.TextField(
-                width=190,
+                width=390,
                 border_color="#FFFFFF",
-                text_style=ft.TextStyle(color="#FFFFFF"),
+                text_style=ft.TextStyle(color="#FFFFFF", size=20),
                 on_focus=lambda e, Index=i: option_clicked(e, Index),
                 bgcolor=ft.colors.RED
             ) for i in range(4)
@@ -236,15 +251,16 @@ def draft_page(page: ft.Page, audio1, audio2):
         # Populate the edit_container with these controls
         new_edit_container = ft.Container(
             visible=True,
+            alignment=ft.alignment.center,  # Center the container
             content=ft.Column(
                 controls=[
                     Edit_question,
                     ft.Row([option_fields[0], option_fields[1]], spacing=20),
                     ft.Row([option_fields[2], option_fields[3]], spacing=20),
-                    ft.Row([publish, save_button], spacing=20, alignment=ft.MainAxisAlignment.END),
+                    ft.Row([publish, save_button], width=800, spacing=20, alignment=ft.MainAxisAlignment.END),
                 ],
                 spacing=10,
-                width=400
+                width=900
             ),
             margin=ft.margin.only(top=10)
         )
@@ -278,7 +294,8 @@ def draft_page(page: ft.Page, audio1, audio2):
                         padding=10,
                         border_radius=5,
                         border=ft.border.all(1, "#FFFFFF"),
-                        width=700,
+                        width=1200,
+                        margin=10
                     ),
                     on_tap=lambda e, q=QID, i=Index: handle_question_tap(q, i),
                     on_double_tap=lambda e, q=QID, i=Index: handle_question_double_tap(q),
@@ -290,10 +307,9 @@ def draft_page(page: ft.Page, audio1, audio2):
     update_column()
 
     def dropdown_change(e):
-        nonlocal selected_chapter, selected_quiz, quiz, sort, sorted_chapter
+        nonlocal selected_chapter, selected_quiz, quiz, sorted_chapter
 
         selected_chapter = chapter_dd.value.split()[-1]
-        sort = sorted(chapter_quizQ[selected_chapter])
         sorted_chapter = [int(i) for i in sorted(chapter_quizQ)]
         temp = quiz
         quiz = sorted([int(i) for i in chapter_quizQ[str(sorted_chapter[sorted_chapter.index(int(selected_chapter))])]])
@@ -320,8 +336,9 @@ def draft_page(page: ft.Page, audio1, audio2):
         controls=[
             ft.Container(
                 content=cl,
-                border=ft.border.all(1, "#FFFFFF"),
+                expand=True,
                 border_radius=5,
+                border=ft.border.all(1, "#FFFFFF"),
                 padding=10,
                 bgcolor="#353232",
             )
@@ -333,33 +350,19 @@ def draft_page(page: ft.Page, audio1, audio2):
         vertical_alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
-            ft.AppBar(
-                title=ft.Text("Account Management", color="white"),
-                bgcolor="#222222",
-                actions=[
-                    ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/draft_page")),
-                    ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/account_management")),
-                    ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/edit_page")),
-                    ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/profile_management")),
-                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: [page.overlay.append(audio1), page.overlay.append(audio2),
-                                                      page.go("/")]),
-                ],
-            ),
+            Admin.page.appbar,
+            Hedr,
             ft.Container(
                 content=ft.Column(
                     controls=[top_filer, question_details],  # Add elements inside
                     spacing=15,  # Keep spacing between elements
                     alignment=ft.MainAxisAlignment.CENTER,  # Center vertically inside container
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,  # Center horizontally inside container
+                    width=1200
                 ),
                 padding=16,  # Optional padding
                 alignment=ft.alignment.center,  # Center the entire container on the page
-                width=700,  # 🔥 Add a fixed width to prevent stretching
+                expand=True,  # 🔥 Add a fixed width to prevent stretching
             )
         ]
 

@@ -3,6 +3,7 @@ import os
 import flet as ft
 from database import add_new_user, user_info  # Ensure this function exists in database.py
 from datetime import datetime
+from admin import AdminPage
 
 
 def new_user(page: ft.Page, role, audio1, audio2):
@@ -12,7 +13,8 @@ def new_user(page: ft.Page, role, audio1, audio2):
     page.bgcolor = "#343434"
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
-
+    Admin = AdminPage(page, role, audio1, audio2, "/account_management")
+    Hedr = Admin.hedrNavFdbkBx
     username_field = ft.TextField(label="Username", bgcolor="#000000", width=156.5 * 3, height=25 * 3,color="white", border_color="white", label_style=ft.TextStyle(color="white"))
     email_field = ft.TextField(label="Email Address", bgcolor="#000000", width=156.5 * 3, height=25 * 3,color="white", border_color="white", label_style=ft.TextStyle(color="white"))
     password_field = ft.TextField(label="Password", password=True, bgcolor="#000000", width=156.5 * 3, height=25 * 3, color="white", border_color="white", label_style=ft.TextStyle(color="white"))
@@ -60,21 +62,7 @@ def new_user(page: ft.Page, role, audio1, audio2):
         draft.disabled = True
 
     def app_bar():
-        return ft.AppBar(
-            title=ft.Text("Add New User", color="white"),
-            bgcolor="#222222",
-            actions=[
-                *([draft] if role == "Admin" else []),
-                ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                              on_click=lambda e: page.go("/account_management")),
-                *([ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
-                                 on_click=lambda e: page.go("/edit_page"))] if role != "Owner" else []),
-                ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
-                              on_click=lambda e: page.go("/profile_management")),
-                ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: [
-                    page.overlay.append(audio1), page.overlay.append(audio2), page.go("/")]),
-            ],
-        )
+        return Admin.page.appbar
 
     # def add_user_view():
     return ft.View(
@@ -83,6 +71,7 @@ def new_user(page: ft.Page, role, audio1, audio2):
         bgcolor="#343434",
         appbar=app_bar(),
         controls=[
+            Hedr,
             ft.Container(
                 content=ft.Column(
                     [

@@ -1,6 +1,6 @@
 import pygame
 from database import Chapter_Quiz, Select, select
-from Result import wrap_text_word_based
+from Result_2 import wrap_text_word_based
 import sys
 import os
 from Page_Menu import page_menu

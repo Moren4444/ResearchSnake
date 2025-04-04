@@ -66,8 +66,20 @@ countdown_event = Event()
 if __name__ == "__main__":
     def main(page: ft.Page):
         page.title = "Login"
-        page.window.height = 800
-        page.window.width = 1280
+        page.window.full_screen = True
+        page.window.min_width = 1000
+        page.window.min_height = 830
+
+        def on_key(e: ft.KeyboardEvent):
+            if e.key == "Escape":
+                page.window.full_screen = False
+                page.update()
+            elif e.key == "F11":
+                page.window.full_screen = True
+                page.update()
+
+        page.on_keyboard_event = on_key
+
         # Define input fields separately so they can be accessed
         # ✅ Apply styles at the start
         page.bgcolor = "#343434"
@@ -503,7 +515,7 @@ if __name__ == "__main__":
                 page.views.append(draft_page.draft_page(page, audio1, audio2))
             elif page.route == "/edit_page":
                 page.overlay.clear()
-                page.views.append(edit_Q3.main(page, audio1, audio2))
+                page.views.append(edit_Q3.main(page, role, audio1, audio2))
             elif page.route == "/profile_management":
                 page.views.append(Profile.profile_management(page, role, audio1, audio2))
             elif page.route == "/add_new_user":
