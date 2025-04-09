@@ -1,16 +1,19 @@
+import os
+
 import flet as ft
 from database import update_user, select_user  # Ensure this function exists in database.py
+from admin import AdminPage
 
 
-def profile_management(page: ft.Page):
+def profile_management(page: ft.Page, role, audio1, audio2):
     username = page.session.get("username")
     password = page.session.get("password")
     user_id = page.session.get("user_id")
 
     # Retrieve user information from the database
-    user_info = select_user(user_id)
 
-    if user_info:
+    if role == "Admin":
+        user_info = select_user(user_id)
         email = user_info.Email
         reg_date = user_info.RegisteredDate
         lastLogin_date = user_info.LastLogin
@@ -18,7 +21,8 @@ def profile_management(page: ft.Page):
         email = "N/A"
         reg_date = "N/A"
         lastLogin_date = "N/A"
-
+    Admin = AdminPage(page, role, audio1, audio2, "/profile_management")
+    Hedr = Admin.hedrNavFdbkBx
     username_field = ft.TextField(
         label="Username",
         value=username,
@@ -66,23 +70,21 @@ def profile_management(page: ft.Page):
         border_color="white",
         label_style=ft.TextStyle(color="white"),
     )
+    draft = ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
+                          on_click=lambda e: page.go("/draft_page"))
+    if not os.path.exists("Quiz_draft2.json"):
+        draft.disabled = True
+
+    def app_bar():
+        return Admin.page.appbar
 
     return ft.View(
-        "/profile_management",
-        [
-            ft.AppBar(
-                title=ft.Text("Profile Management", color="white"),
-                bgcolor="#222222",
-                actions=[
-                    ft.TextButton("Account Management", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/stu_account_management")),
-                    ft.TextButton("Quiz Management", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/edit_page")),
-                    ft.TextButton("Profile", style=ft.ButtonStyle(color="white"),
-                                  on_click=lambda e: page.go("/profile_management")),
-                    ft.TextButton("Logout", style=ft.ButtonStyle(color="white"), on_click=lambda e: page.go("/")),
-                ],
-            ),
+        route="/profile_management",
+        padding=20,
+        bgcolor="#343434",
+        appbar=app_bar(),
+        controls=
+        [Hedr,
             ft.Container(
                 content=ft.Column(
                     [
@@ -99,5 +101,4 @@ def profile_management(page: ft.Page):
                 expand=True,  # Make the container fill the available space
             ),
         ],
-        bgcolor="#343434",
     )

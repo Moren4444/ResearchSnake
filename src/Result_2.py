@@ -57,7 +57,7 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
         arrows = pygame.image.load(path)
         arrows = pygame.transform.scale(arrows, (32 * 2, 32 * 2))
         return [arrows, arrows.get_rect(topleft=position)]
-
+    print(chapter_info, user_answer, player_info)
     running = True
     font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 20)
     sec_font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30)
