@@ -104,12 +104,22 @@ class AdminPage:
                 remainColored(self.route)
             self.page.update()
 
+        def check(e):
+            if not os.path.exists("Quiz_draft2.json"):
+                alert = ft.AlertDialog(
+                    title=ft.Text("Draft not available")
+                )
+                self.page.open(alert)
+                self.page.update()
+            else:
+                page.go("/draft_page")
+
         self.hedrNavDraftBtn = ft.ElevatedButton(
             content=self.draftBtnPng,
             key="hedrNavDraftBtn",
             on_hover=hedrOnHover,
             bgcolor="#222222",
-            on_click=lambda e: page.go("/draft_page")
+            on_click=lambda e: check(e)
         )
 
         self.hedrNavUsersBtn = ft.ElevatedButton(
@@ -145,10 +155,6 @@ class AdminPage:
             on_click=lambda e: [page.overlay.append(audio1), page.overlay.append(audio2),
                                 page.go("/")]
         )
-        if not os.path.exists("Quiz_draft2.json"):
-            self.hedrNavDraftBtn.disabled = True
-        else:
-            self.hedrNavDraftBtn.disabled = False
 
         self.hedrNavBtnsCtner = ft.Container(
             content=ft.Row(

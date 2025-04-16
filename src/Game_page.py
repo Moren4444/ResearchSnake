@@ -1,8 +1,9 @@
 import pygame
 from snakes import Game
 from Resouce import Buttons
-from database import Retrieve_Question, update
+from database import Retrieve_Question, update, resultDB
 from Result_2 import result
+from datetime import datetime
 # from Menu import Menu
 
 
@@ -67,13 +68,17 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     proceed_rect = proceed_s.get_rect(topleft=(364.8 * 2, 294.8 * 2))
     proceed_rect_over = proceed_s.get_rect(topleft=(200 + (screen.get_width() - Restart_s.get_width()) / 2, 460))
     questions = 0
-    list_Question = Retrieve_Question(chapter_info[0], "Question")
-    Option_title = Retrieve_Question(chapter_info[0], "Option1, Option2, Option3, Option4")
+    print("From GamePage: ", chapter_info[0])
+    list_Question = Retrieve_Question(chapter_info[0][3:], "Question")
+    Option_title = Retrieve_Question(chapter_info[0][3:], "Option1, Option2, Option3, Option4")
 
-    answer = Retrieve_Question(chapter_info[0], "CorrectAnswer")
+    answer = Retrieve_Question(chapter_info[0][3:], "CorrectAnswer")
     game_over_text = fonts.render("GAME OVER", True, (255, 255, 255))
     hit = False
     player_proceed = False
+    death_sound_played = False
+    set_str = datetime.now().strftime('%H:%M:%S')
+    set_time = datetime.strptime(set_str, "%H:%M:%S")  # convert to datetime
     try:
         while running:
             screen.fill((50, 50, 50))
@@ -120,10 +125,13 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             print("Proceed..")
                             try:
                                 print(f"checking: {quiz_level}, {player_info[4]}")
+                                print(player_info[0])
                                 # Update the player's level in the database
                                 if quiz_level >= int(player_info[4]):
-                                    update("[User]", "[Level]", int(player_info[4]) + 1, player_info[0])
-                                result(chapter_info, user_answer, resource_path, return_menu, player_info)
+                                    update("[Student]", "[Level]", int(player_info[4]) + 1,
+                                           player_info[0], "Student")
+                                resultDB(player_info[0], quiz_level, chapter_info, user_answer, difficulties, set_time)
+                                result(chapter_info, user_answer, resource_path, return_menu, player_info[0])
                             except Exception as e:
                                 print("Error: ", e)
                             # running = False
@@ -204,13 +212,12 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                  border_radius=5)
 
                 if position:
-                    if position[0] < 620 + 40 or position[0] > 1120 - 40:
+                    if position[0] < 620 + 40 or position[0] > 1120 - 40 or position[1] < 82 or position[1] > 692 - 40:
                         is_alive = False
                         game_over = True
-                        [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
-                    elif position[1] < 82 or position[1] > 692 - 40:
-                        is_alive = False
-                        game_over = True
+                        if not death_sound_played:
+                            game.snake.death_sound.play()
+                            death_sound_played = True  # ✅ Prevent future replays
                         [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
                     else:
                         hit = option.check_collision(position)  # Check for collisions with buttons

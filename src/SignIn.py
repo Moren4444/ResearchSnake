@@ -4,6 +4,7 @@ import flet as ft
 from database import user_info, insert, get_last_user_Id
 import os
 import subprocess
+from Menu import Menu
 import sys
 import hashlib
 import re
@@ -182,8 +183,8 @@ def submit(e, page):
         email_error.value = "Special characters not allowed"
         has_error = True
     # Check if username already exists
-    for i in user_info():
-        if user_input[0] == i[1]:
+    for i in user_info("Student"):
+        if user_input[0].lower() == i[1].lower():
             username_error.value = "Username existed"
             has_error = True
         elif user_input[3] == i[2]:
@@ -195,19 +196,21 @@ def submit(e, page):
         return
 
     last_user_id = get_last_user_Id()  # Implement this function in the database module
-    new_id = str(int(last_user_id) + 1) if last_user_id else "1"  # Start from 1 if no users exist
+    new_id = "S" + str(int(last_user_id) + 1).zfill(4) if last_user_id else "S0001"
 
     hashed_password = hash_password(user_input[1])  # Hash the password before storing
 
     # Insert new user into the database (storing hashed password)
-    insert(f"INSERT INTO [User] VALUES ('{new_id}', '{user_input[0]}', '{user_input[-1]}@gmail.com', "
-           f"'{hashed_password}', 1, 'Student', '{current_time}', '{current_time}')")
+    insert(f"INSERT INTO [Student] VALUES ('{new_id}', '{user_input[0]}', '{user_input[-1]}@gmail.com', "
+           f"'{hashed_password}', 1, '{current_time}', '{current_time}')")
 
     print("✅ User registered successfully!")
 
-    player_info = (new_id, user_input[0], hashed_password, 1, "Student")
+    player_info = (new_id, user_input[0], f"{user_input[-1]}@gmail.com",  hashed_password, 1, current_time, current_time)
     page.window.close()
     os.environ["PLAYER_LEVEL"] = "1"
 
     # Run the Menu.py script
-    subprocess.run([sys.executable, "Menu.py", str(player_info)])
+    # subprocess.run([sys.executable, "Menu.py", str(player_info)])
+
+    Menu(player_info)

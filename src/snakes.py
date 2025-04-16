@@ -1,3 +1,6 @@
+import os
+import sys
+
 import pygame
 
 
@@ -13,7 +16,14 @@ class Snake:
         self.scale = scale
         self.turn_points = {}
         self.new_head = []
-
+        if getattr(sys, 'frozen', False):
+            self.base_path = sys._MEIPASS  # PyInstaller's temp extraction path
+        else:
+            self.base_path = os.path.dirname(__file__)  # Normal script execution path
+        death_path = os.path.join(self.base_path, "assets", "Death_Sound.mp3")
+        clock_path = os.path.join(self.base_path, "assets", "Clock_Ticking.mp3")
+        self.death_sound = pygame.mixer.Sound(death_path)
+        self.clock = pygame.mixer.Sound(clock_path)
         self.resource_path = resource_path
 
         # Initialize snake positions
@@ -132,6 +142,7 @@ class Snake:
         new_head_tuple = tuple(self.new_head)
         if new_head_tuple in self.positions[1:-1]:
             self.snake_can_move = False
+            self.death_sound.play()
 
         # Update positions
         self.positions.insert(0, new_head_tuple)
@@ -218,6 +229,9 @@ class Game:
         # Color logic remains the same
         if remaining < 2000:
             color = (255, 0, 0)
+            self.snake.clock.play()
+            if remaining == 0:
+                self.snake.clock.stop()
         else:
             color = (16, 196, 109)
 

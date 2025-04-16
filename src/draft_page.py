@@ -213,8 +213,9 @@ def draft_page(page: ft.Page, audio1, audio2):
             correct_index = next((i for i, opt in enumerate(option_fields) if opt.bgcolor == ft.colors.GREEN), 0)
             correct_answer = chr(65 + correct_index)  # Convert to A-D
             quiz_ID = chapter_quizQ[selected_chapter][selected_quiz][str(question_id)][-1]
-            check = select(f"Select Question from Question where QuizID = {quiz_ID}")
-
+            print(quiz_ID)
+            check = select(f"Select Question from Question where QuizID = 'QIZ{int(quiz_ID)}' and QuestionID != '{question_id}'")
+            print(check, question_id)
             if Current_question in [i[0] for i in check]:
                 page.open(
                     ft.AlertDialog(
@@ -226,7 +227,7 @@ def draft_page(page: ft.Page, audio1, audio2):
                       f"Question = '{Current_question}', CorrectAnswer = '{correct_answer}', "
                       f"Option1 = '{current_options[0]}', Option2 = '{current_options[1]}', "
                       f"Option3 = '{current_options[2]}', Option4 = '{current_options[3]}' "
-                      f"where QuestionID = {question_id}")
+                      f"where QuestionID = '{question_id}'")
             publish_snack = ft.SnackBar(
                 ft.Text("Changes saved!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
                 bgcolor="#242323",
@@ -367,3 +368,4 @@ def draft_page(page: ft.Page, audio1, audio2):
         ]
 
     )
+

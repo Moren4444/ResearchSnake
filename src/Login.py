@@ -21,10 +21,6 @@ import getpass
 import re
 import hashlib
 import draft_page
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives import hashes
 from OTP import send_otp_email as otp
 
 
@@ -94,7 +90,7 @@ if __name__ == "__main__":
         # Get current system details
         current_user = getpass.getuser()  # Get current username
         current_hostname = platform.node()  # Get current device name
-        dotenv_path = os.path.join(os.getenv("APPDATA"), "Owner Store", ".env")  # Get correct .env path
+        # dotenv_path = os.path.join(os.getenv("APPDATA"), "Owner Store", ".env")  # Get correct .env path
 
         background_path = os.path.join(base_path, "assets", "Background_audio.mp3")
         audio1 = ft.Audio(
@@ -131,71 +127,71 @@ if __name__ == "__main__":
         print(f"🔍 Debug: Running as {current_user} on {current_hostname}")
         # 🛠 Developer-defined owner credentials (Set before deployment)
         # Change to the real owner's device name
-        load_dotenv(dotenv_path)
+        # load_dotenv(dotenv_path)
         # ALLOWED_OWNER = os.getenv("ALLOWED_OWNER")
         # ALLOWED_HOSTNAME = os.getenv("ALLOWED_HOSTNAME")
-        OWNER_KEY = None
+        # OWNER_KEY = None
 
         # 🛡️ Check if this system is the authorized owner
-        def get_machine_id():
-            try:
-                # Get unique machine GUID (Windows)
-                output = subprocess.check_output("wmic csproduct get uuid", shell=True)
-                uuid = output.decode().split("\n")[1].strip()
-                return uuid
-            except:
-                return None
+        # def get_machine_id():
+        #     try:
+        #         # Get unique machine GUID (Windows)
+        #         output = subprocess.check_output("wmic csproduct get uuid", shell=True)
+        #         uuid = output.decode().split("\n")[1].strip()
+        #         return uuid
+        #     except:
+        #         return None
 
-        OWNER_KEY = os.getenv("OWNER_KEY")
-        MACHINE_ID = os.getenv("MACHINE")
+        # OWNER_KEY = os.getenv("OWNER_KEY")
+        # MACHINE_ID = os.getenv("MACHINE")
 
-        def verify_machine_id(Machine_id, signed_machine_id):
-            # Load the public key (bundled with the app)
-            if not signed_machine_id:
-                return False
-            with open("public_key.pem", "rb") as f:
-                Public_key = load_pem_public_key(f.read())
+        # def verify_machine_id(Machine_id, signed_machine_id):
+        #     # Load the public key (bundled with the app)
+        #     if not signed_machine_id:
+        #         return False
+        #     with open("public_key.pem", "rb") as f:
+        #         Public_key = load_pem_public_key(f.read())
+        #
+        #     # Compute the hash of the machine ID
+        #     machine_id_hash = hashlib.sha256(Machine_id.encode()).digest()
+        #
+        #     try:
+        #         # Verify the signature
+        #         Public_key.verify(
+        #             bytes.fromhex(signed_machine_id),
+        #             machine_id_hash,
+        #             padding.PKCS1v15(),
+        #             hashes.SHA256()
+        #         )
+        #         print("✅ Authorization successful: Machine ID is valid!")
+        #         return True
+        #     except:
+        #         print("❌ Authorization failed: Machine ID is invalid!")
+        #         return False
 
-            # Compute the hash of the machine ID
-            machine_id_hash = hashlib.sha256(Machine_id.encode()).digest()
+        # USB_path = "private_key.pem"
 
-            try:
-                # Verify the signature
-                Public_key.verify(
-                    bytes.fromhex(signed_machine_id),
-                    machine_id_hash,
-                    padding.PKCS1v15(),
-                    hashes.SHA256()
-                )
-                print("✅ Authorization successful: Machine ID is valid!")
-                return True
-            except:
-                print("❌ Authorization failed: Machine ID is invalid!")
-                return False
+        # def sign_machine_id(Machine_id):
+        #     # Load the private key (only the developer has this)
+        #     if not os.path.exists(USB_path):
+        #         return None
+        #     with open(USB_path, "rb") as f:
+        #         Private_key = load_pem_private_key(f.read(), password=None)
+        #
+        #     # Create a secure hash of the Machine ID
+        #     machine_id_hash = hashlib.sha256(Machine_id.encode()).digest()
+        #
+        #     # Sign the hash
+        #     signature = Private_key.sign(
+        #         machine_id_hash,
+        #         padding.PKCS1v15(),
+        #         hashes.SHA256()
+        #     )
+        #
+        #     return signature.hex()  # Convert to a storable format
 
-        USB_path = "D://private_key.pem"
-
-        def sign_machine_id(Machine_id):
-            # Load the private key (only the developer has this)
-            if not os.path.exists(USB_path):
-                return None
-            with open(USB_path, "rb") as f:
-                Private_key = load_pem_private_key(f.read(), password=None)
-
-            # Create a secure hash of the Machine ID
-            machine_id_hash = hashlib.sha256(Machine_id.encode()).digest()
-
-            # Sign the hash
-            signature = Private_key.sign(
-                machine_id_hash,
-                padding.PKCS1v15(),
-                hashes.SHA256()
-            )
-
-            return signature.hex()  # Convert to a storable format
-
-        if MACHINE_ID != hash_password(get_machine_id()):
-            OWNER_KEY = None
+        # if MACHINE_ID != hash_password(get_machine_id()):
+        #     OWNER_KEY = None
 
         username_field = ft.TextField(
             label="Username",
@@ -219,7 +215,7 @@ if __name__ == "__main__":
             border_color="#FFFFFF",
         )
         role = None
-
+        admin_ID = None
         # Create a container to hold the background image
         background_container = ft.Container(
             content=ft.Image(
@@ -507,15 +503,15 @@ if __name__ == "__main__":
         # Define a function to handle navigation
         def route_change(route):
             page.views.clear()
-            nonlocal role
-
+            nonlocal role, admin_ID
+            print(admin_ID)
             if page.route == "/signin":
                 page.views.append(SignIn.signin_view(page, play_click_sound))
             elif page.route == "/draft_page":
                 page.views.append(draft_page.draft_page(page, audio1, audio2))
             elif page.route == "/edit_page":
                 page.overlay.clear()
-                page.views.append(edit_Q3.main(page, role, audio1, audio2))
+                page.views.append(edit_Q3.main(page, role, audio1, audio2, admin_ID))
             elif page.route == "/profile_management":
                 page.views.append(Profile.profile_management(page, role, audio1, audio2))
             elif page.route == "/add_new_user":
@@ -614,50 +610,49 @@ if __name__ == "__main__":
             password = password_field.value.strip()
             hashed_password = hash_password(password)  # Hash the entered password
             print(hashed_password)
-            machine_id = get_machine_id()
-            if hashed_password and verify_machine_id(machine_id, sign_machine_id(machine_id)):
-                print("Accessing to owner")
-                if hashed_password == OWNER_KEY:
-                    role = "Owner"
-                    print("🔑 Owner access granted via special key!")
-                    page.go("/profile_management")
-                    return
+
             # Validate input
             if username == "":
                 username_error.value = "Username is empty"
-
-            if re.search(r'[^a-zA-Z0-9]', username):
-                username_error.value = "Special characters not allowed"
 
             if password == "":
                 password_error.value = "Password is empty"
                 page.update()
                 return
-            for i in user_info():  # Loop through stored user data
+            role = "Owner" if username.startswith("#") else "Admin" if username.startswith("@") else "Student"
+
+            for i in user_info(role):  # Loop through stored user data
                 stored_user = (i[1].strip(), i[3].strip())  # Strip DB values
                 if (username, hashed_password) == stored_user:
                     print("✅ Correct Login!")
-                    last_Update(i[0])
+                    last_Update(i[0], role)
                     if not remember_me.value and os.path.exists("user_credentials.json"):
                         os.remove("user_credentials.json")
                     elif remember_me.value:
                         save_login_credentials(username, password)  # Password is hashed before saving
-                    page.session.set("username", i[1])  # Store username
-                    page.session.set("password", i[2])  # Store password
+                    # page.session.set("username", i[1])  # Store username
+                    # page.session.set("password", i[2])  # Store password
                     page.session.set("user_id", i[0])  # Store user ID for database update
                     # Run the Menu.py script
                     # subprocess.run([sys.executable, "Menu.py", str(i)])
-                    if i[-3] == "Student":
-                        page.window.close()
-                        Menu(i)
-                    elif i[-3] == "Admin":
-                        role = "Admin"
+                    if role == "Owner":
+                        # owner_ID = i[0]
+                        page.go("/profile_management")
+                    elif role == "Admin":
+                        nonlocal admin_ID
+                        admin_ID = i[0]
                         if not Chapter_Quiz()[1]:
                             Add_ChapterDB()
-                            Add_QuizLVL(1, 1)
-                            Add_Question(1)
+                            Add_QuizLVL(1, "CHA01")
+                            Add_Question(1, i[0])
                         page.go("/edit_page")
+                    else:
+                        page.window.close()
+                        print("Student: ", i)
+                        Menu(i)
                     return
+            if re.search(r'[^a-zA-Z0-9]', username):
+                username_error.value = "Special characters not allowed"
             password_error.value = "Incorrect username or password"
             page.update()
             print("Incorrect")

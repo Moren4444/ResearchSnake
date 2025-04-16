@@ -1,6 +1,4 @@
-import os
 from datetime import datetime, timedelta
-
 import flet as ft
 from database import admin_profile_info, stu_profile_info, delete_user
 from admin import AdminPage
@@ -11,6 +9,8 @@ def account_management(page: ft.Page, role, audio1, audio2):
         users = admin_profile_info()
     elif role == "Admin":
         users = stu_profile_info()
+    Admin = AdminPage(page, role, audio1, audio2, "/account_management")
+    Hedr = Admin.hedrNavFdbkBx
     # password_visible = False
     #
     # def toggle_password(e):
@@ -19,17 +19,21 @@ def account_management(page: ft.Page, role, audio1, audio2):
     #     table.rows = create_rows()
     #     toggle_button.icon = ft.Icons.REMOVE_RED_EYE if password_visible else ft.Icons.REMOVE_RED_EYE_OUTLINED
     #     page.update()
-    Admin = AdminPage(page, role, audio1, audio2, "/account_management")
-    Hedr = Admin.hedrNavFdbkBx
 
     def delete_user_action(user_id):
         print(f"Attempting to delete user with ID: {user_id}")
 
         def confirm_delete(e):
-            delete_user(user_id)
-            nonlocal users
-            users = admin_profile_info()
+            nonlocal users, role
+            target = "Student" if role == "Admin" else "Admin"
+            delete_user(user_id, target)
+            users = admin_profile_info() if role == "Owner" else stu_profile_info()
             table.rows = create_rows()
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("The user is deleted successfully!", color="white"),
+                bgcolor="green"
+            )
+            page.open(page.snack_bar)
             page.update()
 
         page.dialog = ft.AlertDialog(
@@ -60,40 +64,67 @@ def account_management(page: ft.Page, role, audio1, audio2):
             return f"{days} day ago" if days == 1 else f"{days} days ago"
 
     def create_rows():
-        return [
-            ft.DataRow(
-                cells=[
-                    # ft.DataCell(ft.Text(str(user[1]), color="white")),  # UserID
-                    ft.DataCell(ft.Text(user[2], color="white")),  # Name
-                    ft.DataCell(ft.Text(user[3], color="white")),  # Email Address
-                    ft.DataCell(ft.Text(str(user[5]), color="white")),  # Level
-                    # ft.DataCell(ft.Text(user[6], color="white")),  # Role
-                    ft.DataCell(ft.Text(str(user[7]), color="white")),  # Registered Date
-                    ft.DataCell(ft.Text(time_ago(user[8]), color="white")),  # Last Login
-                    ft.DataCell(
-                        ft.Row(
-                            [
-                                ft.IconButton(
-                                    icon=ft.icons.DELETE,
-                                    on_click=lambda e, user_id=user[0]: delete_user_action(user_id),
-                                    icon_color="red"
-                                ),
-                            ]
+        if role == 'Admin':
+            return [
+                ft.DataRow(
+                    cells=[
+                        # ft.DataCell(ft.Text(str(user[1]), color="white")),  # UserID
+                        ft.DataCell(ft.Text(user[1], color="white")),  # Name
+                        ft.DataCell(ft.Text(user[2], color="white")),  # Email Address
+                        ft.DataCell(ft.Text(str(user[4]), color="white")),  # Level
+                        # ft.DataCell(ft.Text(user[6], color="white")),  # Role
+                        ft.DataCell(ft.Text(str(user[5]), color="white")),  # Registered Date
+                        ft.DataCell(ft.Text(time_ago(user[-1]), color="white")),  # Last Login
+                        ft.DataCell(
+                            ft.Row(
+                                [
+                                    ft.IconButton(
+                                        icon=ft.icons.DELETE,
+                                        on_click=lambda e, user_id=user[0]: delete_user_action(user_id),
+                                        icon_color="red"
+                                    ),
+                                ]
+                            )
                         )
-                    )
-                ]
+                    ]
+            ) for user in users
+        ]
+        elif role == 'Owner':
+            return [
+                ft.DataRow(
+                    cells=[
+                        # ft.DataCell(ft.Text(str(user[1]), color="white")),  # UserID
+                        ft.DataCell(ft.Text(user[1], color="white")),  # Name
+                        ft.DataCell(ft.Text(user[2], color="white")),  # Email Address
+                        # ft.DataCell(ft.Text(user[6], color="white")),  # Role
+                        ft.DataCell(ft.Text(str(user[4]), color="white")),  # Registered Date
+                        ft.DataCell(ft.Text(time_ago(user[5]), color="white")),  # Last Login
+                        ft.DataCell(
+                            ft.Row(
+                                [
+                                    ft.IconButton(
+                                        icon=ft.icons.DELETE,
+                                        on_click=lambda e, user_id=user[0]: delete_user_action(user_id),
+                                        icon_color="red"
+                                    ),
+                                ]
+                            )
+                        )
+                    ]
             ) for user in users
         ]
 
     table = ft.DataTable(
         columns=[
-            # ft.DataColumn(ft.Text("UserID", size=20, weight=ft.FontWeight.BOLD, color="white")),
-            ft.DataColumn(ft.Text("Name", size=20, weight=ft.FontWeight.BOLD, color="white")),
-            ft.DataColumn(ft.Text("Email", size=20, weight=ft.FontWeight.BOLD, color="white")),
-            ft.DataColumn(ft.Text("Level", size=20, weight=ft.FontWeight.BOLD, color="white")),
-            ft.DataColumn(ft.Text("Registered Date", size=20, weight=ft.FontWeight.BOLD, color="white")),
-            ft.DataColumn(ft.Text("Last Login", size=20, weight=ft.FontWeight.BOLD, color="white")),
-            ft.DataColumn(ft.Text("Actions", size=20, weight=ft.FontWeight.BOLD, color="white")),
+            col for col in [
+                # ft.DataColumn(ft.Text("UserID", size=20, weight=ft.FontWeight.BOLD, color="white")),
+                ft.DataColumn(ft.Text("Name", size=20, weight=ft.FontWeight.BOLD, color="white")),
+                ft.DataColumn(ft.Text("Email", size=20, weight=ft.FontWeight.BOLD, color="white")),
+                ft.DataColumn(ft.Text("Level", size=20, weight=ft.FontWeight.BOLD, color="white")) if role == "Admin" else None,
+                ft.DataColumn(ft.Text("Registered Date", size=20, weight=ft.FontWeight.BOLD, color="white")),
+                ft.DataColumn(ft.Text("Last Login", size=20, weight=ft.FontWeight.BOLD, color="white")),
+                ft.DataColumn(ft.Text("Actions", size=20, weight=ft.FontWeight.BOLD, color="white")),
+            ] if col is not None
         ],
         rows=create_rows(),
         bgcolor="#474747",
@@ -111,20 +142,13 @@ def account_management(page: ft.Page, role, audio1, audio2):
     back_button = ft.ElevatedButton("Logout", on_click=lambda e: page.go("/"))
 
     add_user_button = ft.ElevatedButton("Add New User", on_click=lambda e: page.go("/add_new_user"))
-    draft = ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
-                          on_click=lambda e: page.go("/draft_page"))
-    if not os.path.exists("Quiz_draft2.json"):
-        draft.disabled = True
-
-    def app_bar():
-        return Admin.page.appbar
 
     return ft.View(
         "/account_management",
         padding=20,
         bgcolor="#343434",
-        appbar=app_bar(),
-        controls=[
+        controls = [
+            Admin.page.appbar,
             Hedr,
             ft.Row([table], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([add_user_button], alignment=ft.MainAxisAlignment.CENTER),

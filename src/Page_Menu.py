@@ -20,7 +20,7 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
     description_letter_index = 0
     # chapter_info = eval(sys.argv[1])
     print(chapter_info)
-    Chapter = small_font.render(f"Chapter {chapter_info[0]}", True, (255, 255, 255))
+    Chapter = small_font.render(f"Chapter {int(chapter_info[0][3:])}", True, (255, 255, 255))
 
     last_update_time = pygame.time.get_ticks()
     scale = 2.8764
@@ -48,7 +48,6 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
         arrows = pygame.transform.scale(arrows, (32 * 2, 32 * 2))
         return [arrows, arrows.get_rect(topleft=(50, 30))]
 
-    print(running)
     while running:
         screen.fill((50, 50, 50))
         mouse = pygame.mouse.get_pos()
@@ -73,10 +72,12 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
                 if Start_Button.collidepoint(event.pos):
                     print("Start button clicked")
                     running = False  # Exit the current Pygame loop
-                    print(selected)
-                    Game_page(player_info, selected[1], return_to_menu_callback, resource_path,
-                              chapter_info, quiz_level, click)
-                    pygame.display.quit()  # Close the current Pygame window
+                    try:
+                        Game_page(player_info, selected[1], return_to_menu_callback, resource_path,
+                                  chapter_info, quiz_level, click)
+                        pygame.display.quit()  # Close the current Pygame window
+                    except Exception as e:
+                        print("Issues: ", e)
                     print("Launching Game_page...")
                     print("Game_page exited")
                     # subprocess.run([sys.executable, "Game-page.py", str(player_info)])

@@ -20,9 +20,56 @@ conn = pyodbc.connect(connection_string)
 cursor = conn.cursor()
 
 
+def generate_quiz_id(selected_id):
+    return "QIZ" + str(int(selected_id)).zfill(2) if selected_id else "QIZ01"
+
+
+def generate_question_id(selected_id):
+    return "Q" + str(int(selected_id)).zfill(2) if selected_id else "Q01"
+
+
+def generate_user_id(selected_id, role):
+    prefix = "S" if role == "Student" else "OW" if role == "Owner" else "A"
+    return prefix + str(int(selected_id)).zfill(4) if selected_id else f"{prefix}0001"
+
+
+def generate_chapter_id(selected_id):
+    return "CHA" + str(selected_id).zfill(2) if selected_id else "CHA01"
+
+
 def insert(query):
     cursor.execute(query)
     conn.commit()
+
+
+def resultDB(player_info, quiz_level, chapter_info, user_answer, difficulties_speed, set_time):
+    print("Testing: ", player_info, chapter_info, difficulties_speed)
+    Game_ID = "SELECT MAX(CAST(SUBSTRING(GameID, 3, LEN(GameID)) AS INT)) FROM Game_Session"
+    cursor.execute(Game_ID)
+    max_id = cursor.fetchone()[0]
+    next_game_id = max_id + 1 if max_id is not None else 1
+    difficulties = "Easy" if difficulties_speed == 180 else "Medium" if difficulties_speed == 150 else "Hard"
+    now_str = datetime.now().strftime("%H:%M:%S")
+    now_time = datetime.strptime(now_str, "%H:%M:%S")
+    diff = now_time - set_time
+    total_seconds = diff.total_seconds()
+    minutes = int(total_seconds // 60)
+    seconds = int(total_seconds % 60)
+    query = "INSERT INTO Game_Session VALUES (?, ?, ?, ?, ?)"
+    cursor.execute(query, f"GA{next_game_id:04d}", quiz_level, player_info,
+                   difficulties, f"{minutes} min {seconds} sec" if minutes > 0 else f"{seconds} sec")
+    cursor.commit()
+
+    for index, i in enumerate(user_answer):
+        question = Retrieve_Question(chapter_info[0][3:], "QuestionID")[index]
+        Result_ID = "SELECT MAX(CAST(SUBSTRING(ResultID, 3, LEN(GameID)) AS INT)) FROM Result"
+        cursor.execute(Result_ID)
+        max_id = cursor.fetchone()[0]
+        next_id = max_id + 1 if max_id is not None else 1
+        query = f"Insert into Result values (?, ?, ?, ?)"
+        cursor.execute(query, f'RS{next_id:04d}', question, f"GA{next_game_id:04d}", i)
+        cursor.commit()
+    pass
 
 
 def select(query):
@@ -35,10 +82,10 @@ def update_DB(query):
     conn.commit()
 
 
-def last_Update(ID):
+def last_Update(ID, role):
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(now_str)
-    query = "Update [User] set LastLogin = ? where UserID = ?"
+    query = f"Update [{role}] set LastLogin = ? where {role}ID = ?"
     cursor.execute(query, now_str, ID)
     cursor.commit()
 
@@ -57,7 +104,8 @@ def add_new_user(name, email, password, level, role, registeredDate, lastLogin):
             if cursor.fetchone()[0] == 0:
                 break
 
-    query = ("INSERT INTO [User] (UserID, Name, Email, Password, Level, Role, RegisteredDate, LastLogin) VALUES (?, ?, "
+    query = ("INSERT INTO [Student] (UserID, Name, Email, Password, Level, Role, RegisteredDate, LastLogin) VALUES ("
+             "?, ?,"
              "?, ?, ?, ?, ?, ?)")
     try:
         cursor.execute(query, (new_user_id, name, email, password, level, role, registeredDate, lastLogin))
@@ -68,45 +116,99 @@ def add_new_user(name, email, password, level, role, registeredDate, lastLogin):
 
 
 def admin_profile_info():
-    cursor.execute("select UserID + 0 as new_ID, * from [user] where Role = 'Admin' order by new_ID")
+    cursor.execute("select * from [Admin]")
     user = cursor.fetchall()
     return user
+
+
+def add_new_admin(name, email, password, registeredDate, lastLogin):
+    # Changed UserID to AdminID to match your table structure
+    cursor.execute("SELECT MAX(AdminID) FROM [Admin]")
+    max_id = cursor.fetchone()[0]
+
+    # Generate initial ID - fixed potential None issue and string conversion
+    new_user_id = "A0001" if max_id is None else "A" + str(int(max_id[1:]) + 1).zfill(4)
+
+    # Check for conflicts and generate a new ID if needed
+    cursor.execute("SELECT COUNT(*) FROM [Admin] WHERE AdminID = ?", (new_user_id,))
+    while cursor.fetchone()[0] > 0:
+        next_num = int(new_user_id[1:]) + 1
+        new_user_id = "A" + str(next_num).zfill(4)
+        cursor.execute("SELECT COUNT(*) FROM [Admin] WHERE AdminID = ?", (new_user_id,))
+
+    query = ("INSERT INTO [Admin] (AdminID, Name, Email, Password, RegisteredDate, LastLogin) VALUES ("
+             "?, ?, ?, ?, ?, ?)")
+    try:
+        cursor.execute(query, (new_user_id, name, email, password, registeredDate, lastLogin))
+        conn.commit()
+        print(f"✅ New admin '{name}' added successfully! AdminID: {new_user_id}")
+        return True
+    except pyodbc.IntegrityError as e:
+        print(f"❌ Error inserting admin: {e}")
+        return False
+
+
+def add_new_student(name, email, password, level, registeredDate, lastLogin):
+    # Change UserID to StudentID in the query
+    cursor.execute("SELECT MAX(StudentID) FROM Student")
+    max_id = cursor.fetchone()[0]
+
+    # Generate initial ID
+    new_user_id = "S0001" if max_id is None else "S" + str(int(max_id[1:]) + 1).zfill(4)
+
+    # Check for conflicts and generate a new ID if needed
+    cursor.execute("SELECT COUNT(*) FROM Student WHERE StudentID = ?", (new_user_id,))
+    while cursor.fetchone()[0] > 0:
+        next_num = int(new_user_id[1:]) + 1
+        new_user_id = "S" + str(next_num).zfill(4)
+        cursor.execute("SELECT COUNT(*) FROM Student WHERE StudentID = ?", (new_user_id,))
+
+    query = ("INSERT INTO Student (StudentID, Name, Email, Password, Level, RegisteredDate, LastLogin) VALUES ("
+             "?, ?, ?, ?, ?, ?, ?)")
+    try:
+        cursor.execute(query, (new_user_id, name, email, password, level, registeredDate, lastLogin))
+        conn.commit()
+        print(f"✅ New user '{name}' added successfully! UserID: {new_user_id}")
+        return True
+    except pyodbc.IntegrityError as e:
+        print(f"❌ Error inserting user: {e}")
+        return False
 
 
 def stu_profile_info():
-    cursor.execute("select UserID + 0 as new_ID, * from [user] where Role = 'Student' order by new_ID")
+    cursor.execute("select * from [Student]")
     user = cursor.fetchall()
     return user
 
 
-def user_info():
-    cursor.execute("Select * from [User]")
+def user_info(role):
+    cursor.execute(f"Select * from [{role}]")
     user = cursor.fetchall()
     return user
 
 
-def select_user(id):
-    cursor.execute(f"Select * from [User] where UserID = {id}")
+def select_user(id, role):
+    print(generate_user_id(id, role))
+    cursor.execute(f"Select * from [{role}] where {role}ID = '{generate_user_id(id, role)}'")
     return cursor.fetchone()
 
 
 def Select():
     try:
-        cursor.execute(f"SELECT "
-                       f"ROW_NUMBER() OVER (ORDER BY CAST(ChapterID AS INTEGER), LevelRequired) AS NewID,"
-                       f"* "
-                       f"FROM Quiz "
-                       f"ORDER BY CAST(ChapterID AS INTEGER), LevelRequired;")
+        cursor.execute(f"""
+            SELECT 
+                ROW_NUMBER() OVER (
+                    ORDER BY CAST(SUBSTRING(ChapterID, 4, LEN(ChapterID)) AS INT), LevelRequired
+                ) AS NewID,
+                * 
+            FROM Quiz 
+            ORDER BY CAST(SUBSTRING(ChapterID, 4, LEN(ChapterID)) AS INT), LevelRequired;
+        """)
         select = cursor.fetchall()
+        print("Read: ", select)
         return select
     except IndexError:
         return None
-
-
-def profile_info():
-    cursor.execute("select UserID + 0 as new_ID, * from [user] order by new_ID")
-    user = cursor.fetchall()
-    return user
 
 
 def Retrieve_Question(ids, column="*"):
@@ -116,7 +218,7 @@ def Retrieve_Question(ids, column="*"):
     num_column = len(column.split(", "))
     with pyodbc.connect(connection_string):
         query = f"SELECT {column} from Question Where QuizID = ?"
-        cursor.execute(query, (quiz_id,))
+        cursor.execute(query, (generate_quiz_id(quiz_id),))
         if num_column > 1:
             for i in cursor.fetchall():
                 row.append(i[0: num_column])
@@ -126,21 +228,14 @@ def Retrieve_Question(ids, column="*"):
     return row
 
 
-def stu_info():
-    cursor.execute("Select * from [User] where Role = 'Student'")
-    user = cursor.fetchall()
-
-    return user
-
-
 def get_last_user_Id():
-    cursor.execute("SELECT MAX(UserID) FROM [User]")
+    cursor.execute(f"SELECT MAX(StudentID) FROM [Student]")
     results = cursor.fetchone()[0]
     return results if results else None  # Fetch the highest ID
 
 
-def update(table, column, new_value, id):
-    cursor.execute(f"UPDATE {table} set {column} = {new_value} where UserID = {id}")
+def update(table, column, new_value, id, role):
+    cursor.execute(f"UPDATE {table} set {column} = {new_value} where {role}ID = '{id}'")
     cursor.commit()
 
 
@@ -164,43 +259,38 @@ def Update_Question(quiz_id, old_question, new_question, new_options, correct_an
     WHERE QuizID = ? and Question = ?
     """
     cursor.execute(query, (new_question, new_options[0], new_options[1], new_options[2],
-                           new_options[3], correct_answer, quiz_id, old_question))
+                           new_options[3], correct_answer, generate_quiz_id(quiz_id), old_question))
     cursor.commit()
 
 
-def Add_Question(selected_id):
-    query_id = "SELECT MAX(QuestionID + 0) FROM Question;"
-    query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?)"
-    check = "Select Question from Question where QuizID = 1"
+def Add_Question(selected_id, admin_ID):
+    query_id = "SELECT MAX(CAST(SUBSTRING(QuestionID, 2, LEN(QuestionID)) AS INT)) FROM Question"
+    query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     cursor.execute(query_id)
     id_exe = cursor.fetchone()[0]
+    print("ADD: ", id_exe)
     new_ID = 0
     if id_exe:
         new_ID = int(id_exe)
-    cursor.execute(check)
-    questions = []
-    taken_id = 0
-    for i in cursor.fetchall():
-        questions.append(i[0])
-    while f"Question {new_ID + 1 + taken_id}" in questions:
-        taken_id += 1
-    print(new_ID)
-    cursor.execute(query, new_ID + 1, f"Question {new_ID + 1}", "A", "Option 1", "Option 2", "Option 3", "Option 4",
-                   selected_id)
+    print(generate_quiz_id(selected_id))
+    cursor.execute(query, generate_question_id(new_ID + 1), f"Question {new_ID + 1}", "A", "Option 1", "Option 2"
+                   , "Option 3", "Option 4", generate_quiz_id(selected_id), admin_ID)
     cursor.commit()
 
 
 def Add_QuizLVL(lvl, chapter):
-    query_id = "SELECT MAX(QuizID + 0) FROM Quiz;"
-    query = "Insert Into Quiz values (?, ?, ?, ?, ?, ?)"
+    query_id = "SELECT MAX(CAST(SUBSTRING(QuizID, 4, LEN(QuizID)) AS INT)) FROM Quiz"
+    query = "Insert Into Quiz values (?, ?, ?, ?, ?)"
     cursor.execute(query_id)
     quiz_id = 0
     id_exe = cursor.fetchone()[0]
+    print("Quiz: ", id_exe)
     if id_exe:
         quiz_id = int(id_exe)
-    cursor.execute(query, quiz_id + 1, "Quiz Name", "Description", lvl, chapter, 1)
+    print("CHAPTER", chapter)
+    cursor.execute(query, generate_quiz_id(quiz_id + 1), "Quiz Name", "Description", lvl, chapter)
     cursor.commit()
-    return quiz_id
+    return quiz_id + 1
 
 
 def Delete_Chapter(chapter_index, delete_question):
@@ -208,53 +298,53 @@ def Delete_Chapter(chapter_index, delete_question):
     query = "Delete from Chapter where ChapterID = ?"
     quiz_match_delete = "Delete from Quiz where ChapterID = ?"
     query_question = "Delete from Question where QuizID = ?"
+
     for i in delete_question:
-        cursor.execute(query_question, i)
-    cursor.execute(quiz_match_delete, chapter_index)
-    cursor.execute(query, chapter_index)
+        cursor.execute(query_question, generate_quiz_id(i))
+    cursor.execute(quiz_match_delete, generate_chapter_id(chapter_index))
+    cursor.execute(query, generate_chapter_id(chapter_index))
     cursor.commit()
 
 
 def Add_ChapterDB():
-    query_id = "Select MAX(ChapterID + 0) from Chapter"
+    query_id = "SELECT MAX(CAST(SUBSTRING(ChapterID, 4, LEN(ChapterID)) AS INT)) FROM Chapter"
     query = "Insert Into Chapter values (?, ?)"
     cursor.execute(query_id)
     chap_id = 0
     id_exe = cursor.fetchone()[0]
+    print("Chapter: ", id_exe)
     if id_exe:
         chap_id = int(id_exe)
-    cursor.execute(query, chap_id + 1, f"Chapter {chap_id + 1}")
+    cursor.execute(query, generate_chapter_id(chap_id + 1), f"Chapter {chap_id + 1}")
 
     print("Chapter update")
     cursor.commit()
-    return chap_id + 1
+    return f"CHA{chap_id + 1:02d}"
 
 
-def Update_Database():
-    with open("Quiz_draft.json") as file:
-        chapter = json.load(file)
-
-    index = 1
-    Q_index = 1
-    Chapter_query = "Insert Into Chapter values (?, ?)"
-    Quiz_query = "Insert Into Quiz values (?, ?, ?, ?, ?, ?)"
-    Question_query = "Insert Into Question values (?, ?, ?, ?, ?, ?, ?, ?)"
-    for keys, value in chapter.items():
-        cursor.execute(Chapter_query, keys, f"Chapter {keys}")
-        for quiz in value:
-            cursor.execute(Quiz_query, index, quiz[0], quiz[1], quiz[2], int(quiz[3]), 1)
-            for question, Q_value in quiz[4].items():
-                cursor.execute(Question_query, Q_index, question, Q_value[0], Q_value[1], Q_value[2]
-                               , Q_value[3], Q_value[4], index)
-                Q_index += 1
-            index += 1
-    cursor.commit()
+# def Update_Database(admin_id):
+#
+#     index = 1
+#     Q_index = 1
+#     Chapter_query = "Insert Into Chapter values (?, ?)"
+#     Quiz_query = "Insert Into Quiz values (?, ?, ?, ?, ?)"
+#     Question_query = "Insert Into Question values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+#     for keys, value in chapter.items():
+#         cursor.execute(Chapter_query, keys, f"Chapter {keys}")
+#         for quiz in value:
+#             cursor.execute(Quiz_query, index, quiz[0], quiz[1], quiz[2], int(quiz[3]))
+#             for question, Q_value in quiz[4].items():
+#                 cursor.execute(Question_query, Q_index, question, Q_value[0], Q_value[1], Q_value[2]
+#                                , Q_value[3], Q_value[4], index, admin_id)
+#                 Q_index += 1
+#             index += 1
+#     cursor.commit()
 
 
 def Delete_QuizLVL(quiz_id):
     query = "Delete from Quiz where QuizID = ?"
     try:
-        cursor.execute(query, quiz_id)
+        cursor.execute(query, generate_quiz_id(quiz_id))
 
         cursor.commit()
     except pyodbc.IntegrityError:
@@ -263,33 +353,14 @@ def Delete_QuizLVL(quiz_id):
 
 def Delete_All(quiz_id):
     query = "Delete from Question where QuizID = ?"
-    cursor.execute(query, quiz_id)
+    cursor.execute(query, generate_quiz_id(quiz_id))
     cursor.commit()
 
 
-def update_user(user_id, new_username, new_password):
-    """ Update the username and password of a user. """
-    query = "UPDATE [User] SET Name = ?, Password = ? WHERE UserID = ?"
-    cursor.execute(query, (new_username, new_password, user_id))
-    conn.commit()
-
-
-def update_user_role(user_id, new_role):
-    query = "UPDATE [User] SET Role = ? WHERE UserID = ?"
-    try:
-        cursor.execute(query, (new_role, user_id))
-        conn.commit()
-        print(f"User {user_id} role updated to {new_role}.")
-    except Exception as ex:
-        print(f"Error updating user role: {ex}")
-        raise ex
-    cursor.execute("select UserID + 0 as new_ID, * from [user] order by new_ID")
-    user = cursor.fetchall()
-    return user
-
-
-def delete_user(user_id):
-    query = "DELETE FROM [User] WHERE UserID = ?"
+def delete_user(user_id, role):
+    query = f"DELETE FROM [{role}] WHERE {role}ID = ?"
+    query = f"DELETE FROM [{role}] WHERE {role}ID = ?"
+    query = f"DELETE FROM [{role}] WHERE {role}ID = ?"
     try:
         cursor.execute(query, (user_id,))
         conn.commit()
@@ -301,19 +372,20 @@ def delete_user(user_id):
 
 def Update_title(info, lvl, chapter):
     print(lvl, chapter)
+
     query = """
         UPDATE Quiz 
         SET Name = ?, 
             Description = ?
         WHERE LevelRequired = ? and ChapterID = ?
         """
-    cursor.execute(query, info[0], info[1], lvl, chapter)
+    cursor.execute(query, info[0], info[1], lvl, generate_chapter_id(chapter))
     cursor.commit()
 
 
 def Delete_Question(quiz_id, question):
     query = "Delete from Question where QuizID = ? and Question = ?"
-    cursor.execute(query, quiz_id, question)
+    cursor.execute(query, generate_quiz_id(quiz_id), question)
     cursor.commit()
 
 
@@ -332,5 +404,6 @@ if __name__ == "__main__":
     # print(Add_Question())
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
-    print(Select())
-    print(select(f"Select QuizID from Question where QuizID = {Select()[1][1]}"))
+    # print(select("Select * from Game_Session where StudentID = 'S0001'"))
+    count = 0
+    print(select_user("01", "Owner"))
