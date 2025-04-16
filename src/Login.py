@@ -215,7 +215,7 @@ if __name__ == "__main__":
             border_color="#FFFFFF",
         )
         role = None
-        admin_ID = None
+        admin_name = None
         # Create a container to hold the background image
         background_container = ft.Container(
             content=ft.Image(
@@ -266,6 +266,7 @@ if __name__ == "__main__":
                 countdown_event = Event()  # Create new event for new countdown
 
                 # Reset count to 60
+                count = 60
                 countdown_text.spans[0].text = f"Resend {count}"
                 page.update()
 
@@ -328,7 +329,6 @@ if __name__ == "__main__":
                     pin = otp(email.value + "@gmail.com")
                     print(pin)
                 finally:
-                    count = 60
                     progress.visible = False
                     page.update()
 
@@ -429,9 +429,12 @@ if __name__ == "__main__":
 
                         def change_password(e):
                             pass_value = hash_password(confirm_password.value)
-                            update_DB(f"UPDATE [User] SET [Password] = '{pass_value}' WHERE "
+                            update_DB(f"UPDATE [{[i for i in ['Student', 'Admin', 'Owner']][0]}] SET "
+                                      f"[Password] = '{pass_value}' WHERE "
                                       f"Email = '{email.value}@gmail.com'")
                             page.dialog = ft.AlertDialog(title=ft.Text("Password Changed"))
+                            page.close(change_dialog)
+                            page.open(page.dialog)
                             page.update()
 
                         password.on_change = validate_passwords
@@ -503,16 +506,17 @@ if __name__ == "__main__":
         # Define a function to handle navigation
         def route_change(route):
             page.views.clear()
-            nonlocal role, admin_ID
-            print(admin_ID)
+            nonlocal role, admin_name
+            print(admin_name)
             if page.route == "/signin":
                 page.views.append(SignIn.signin_view(page, play_click_sound))
             elif page.route == "/draft_page":
                 page.views.append(draft_page.draft_page(page, audio1, audio2))
             elif page.route == "/edit_page":
                 page.overlay.clear()
-                page.views.append(edit_Q3.main(page, role, audio1, audio2, admin_ID))
+                page.views.append(edit_Q3.main(page, role, audio1, audio2, admin_name))
             elif page.route == "/profile_management":
+                page.overlay.clear()
                 page.views.append(Profile.profile_management(page, role, audio1, audio2))
             elif page.route == "/add_new_user":
                 page.views.append(AddUser.new_user(page, role, audio1, audio2))
@@ -639,12 +643,12 @@ if __name__ == "__main__":
                         # owner_ID = i[0]
                         page.go("/profile_management")
                     elif role == "Admin":
-                        nonlocal admin_ID
-                        admin_ID = i[0]
+                        nonlocal admin_name
+                        admin_name = i[1]
                         if not Chapter_Quiz()[1]:
                             Add_ChapterDB()
                             Add_QuizLVL(1, "CHA01")
-                            Add_Question(1, i[0])
+                            Add_Question(1, i[1])
                         page.go("/edit_page")
                     else:
                         page.window.close()
