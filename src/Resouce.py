@@ -1,9 +1,10 @@
+import hashlib
 import os
 import sys
 
 import pygame
 import random
-from database import select
+from database import select, update_DB
 from OTP import send_otp_email as otp
 
 
@@ -299,6 +300,11 @@ def countdown(start_time, duration=60):
     return max(0, duration - elapsed_sec)
 
 
+def hash_password(password: str) -> str:
+    """Hash a password using SHA-256."""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
 class Keyboard_Writing:
     def __init__(self, screen, max_length=30):
         self.pin = None
@@ -405,22 +411,41 @@ class Keyboard_Writing:
             self.active_input = 1
         if self.proceed_button[0].collidepoint(mouse_pos):
             if self.proceed_button[1] == "Gmail":
+                self.gmail = self.text
                 self.pin = otp(self.text + "@gmail.com")
                 print(self.pin)
                 self.proceed_button[1] = "OTP"
                 self.clear()
                 self.x = 0
             elif self.proceed_button[1] == "OTP":
-                if pygame.Rect((400, 372, 70, 20)).collidepoint(mouse_pos):
-                    print("HAI")
-                    self.remaining = countdown(self.otp_start_time)  # Use stored start time
-                if self.pin == self.text:
-                    self.proceed_button[1] = "Change"
-                    self.clear()
-                    self.x = 0
+                if self.remaining == 0:
+                    self.pin = None
+                    print(self.pin)
+                if self.pin:
+                    if self.pin == self.text:
+                        self.proceed_button[1] = "Change"
+                        self.clear()
+                        self.x = 0
             elif self.proceed_button[1] == "Change":
-                if self.text == self.text2:
-                    print("Update")
+                try:
+                    if self.text == self.text2:
+                        pass_value = hash_password(self.text)
+                        update_DB(f"UPDATE [Student] SET [Password] = '{pass_value}' WHERE "
+                                  f"Email = '{self.gmail}@gmail.com'")
+                        self.open_overlay = False
+                except Exception as e:
+                    print("ErrorS: ", e)
+        elif self.proceed_button[1] == "OTP":
+            # Check if OTP is being clicked
+            try:
+                otp_rect = pygame.Rect(400, 372, 70, 20)
+                # This should match your blit position and approximate text size
+                if otp_rect.collidepoint(mouse_pos):
+                    self.pin = otp(self.gmail + "@gmail.com")
+                    print(self.pin)
+                    self.otp_start_time = pygame.time.get_ticks()
+            except Exception as e:
+                print("Error: ", e)
         if self.input_1.collidepoint(mouse_pos):
             self.active_input = 1
         elif self.input_2.collidepoint(mouse_pos):
@@ -446,12 +471,13 @@ class Keyboard_Writing:
         if self.otp_start_time is None:
             self.otp_start_time = pygame.time.get_ticks()
         self.remaining = countdown(self.otp_start_time)  # Use stored start time
-        Otp = font(20).render(f"OTP {self.remaining}", True, (255, 255, 255))
+        self.Otp = font(20).render(f"OTP {self.remaining if self.remaining > 0 else 'Resend'}",
+                                   True, (255, 255, 255))
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
         self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
         self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
-        self.screen.blit(Otp, (400, 372))
+        self.screen.blit(self.Otp, (400, 372))
 
     def _drawChange(self):
         self.container()
