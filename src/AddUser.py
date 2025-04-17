@@ -1,7 +1,12 @@
 import flet as ft
-from database import add_new_student, add_new_admin, user_info
+from database import add_new_student, add_new_admin, check_existing
 from datetime import datetime
 from admin import AdminPage
+import hashlib
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
 
 
 def new_user(page: ft.Page, role, audio1, audio2):
@@ -15,6 +20,10 @@ def new_user(page: ft.Page, role, audio1, audio2):
     Admin = AdminPage(page, role, audio1, audio2, "/add_new_user")
     Hedr = Admin.hedrNavFdbkBx
 
+    def hash_password(password: str) -> str:
+        """Hash a password using SHA-256."""
+        return hashlib.sha256(password.encode()).hexdigest()
+
     # Common fields for both roles
     username_field = ft.TextField(label="Username", bgcolor="#000000", width=156.5 * 3, height=25 * 3, color="white",
                                   border_color="white", label_style=ft.TextStyle(color="white"))
@@ -27,18 +36,31 @@ def new_user(page: ft.Page, role, audio1, audio2):
     # Level field only for Admin
     level_field = ft.TextField(label="Level", bgcolor="#000000", width=156.5 * 3, height=25 * 3, color="white",
                                border_color="white",
+                               input_filter=ft.NumbersOnlyInputFilter(),
                                label_style=ft.TextStyle(color="white")) if role == 'Admin' else None
 
     def submit_new_user(e):
         now = datetime.now()
+
         current_dt = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        username = username_field.value.strip()
+        if role == "Owner":
+            username = "@" + username_field.value.strip()
+        elif role == "Admin":
+            username = username_field.value.strip()
+
         email = email_field.value.strip() + "@gmail.com"
+
         password = password_field.value.strip()
+        hashed_password = hash_password(password)  # Hash the entered password
+        print(hashed_password)
+
         level = level_field.value.strip() if role == 'Admin' else None
+
         Role = "Admin" if role == "Owner" else "Student"
+
         registeredDate = current_dt
+
         lastLogin = current_dt
 
         if not username or not email or not password:
@@ -68,26 +90,41 @@ def new_user(page: ft.Page, role, audio1, audio2):
         #
         #         return
 
-        # Create user after validation
-        if role == "Owner":
-            add_new_admin(username, email, password, registeredDate, lastLogin)
-        elif role == "Admin":
-            if not add_new_student(username, email, password, level, registeredDate, lastLogin):
-                page.snack_bar = ft.SnackBar(
-                    content=ft.Text("Username/Email already exists!", color="white"),
-                    bgcolor="red",
-                    duration=2000,
-                )
-                page.open(page.snack_bar)
-                page.update()
-            else:
+        # Check if username or email already exists
+        redundancy = check_existing(role, username, email)
+
+        if not redundancy:
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("Username/Email already exists!", color="white"),
+                bgcolor="red",
+                duration=2000,
+            )
+            page.open(page.snack_bar)
+            page.update()
+        else:
+            if role == "Owner":
+                add_new_admin(username, email, hashed_password, registeredDate, lastLogin)
                 page.snack_bar = ft.SnackBar(
                     content=ft.Text("The user is added successfully!", color="white"),
                     bgcolor="green"
                 )
-                page.open(page.snack_bar)
-                page.update()
-                page.go("/account_management")
+            elif role == "Admin":
+                if not add_new_student(username, email, hashed_password, level, registeredDate, lastLogin):
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text("Username/Email already exists!", color="white"),
+                        bgcolor="red",
+                        duration=2000,
+                    )
+                    page.open(page.snack_bar)
+                    page.update()
+                else:
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text("The user is added successfully!", color="white"),
+                        bgcolor="green"
+                    )
+            page.open(page.snack_bar)
+            page.update()
+            page.go("/account_management")
 
     # Build the column controls dynamically
     column_controls = [
@@ -133,4 +170,3 @@ def new_user(page: ft.Page, role, audio1, audio2):
             )
         ],
     )
-

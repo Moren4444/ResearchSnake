@@ -178,6 +178,46 @@ def add_new_student(name, email, password, level, registeredDate, lastLogin):
         return False
 
 
+def check_existing(role, new_name, new_email):
+    # Fetch and flatten email lists
+    cursor.execute("Select Email from [Student]")
+    email_stu = [row[0] for row in cursor.fetchall()]
+
+    cursor.execute("Select Email from [Admin]")
+    email_admin = [row[0] for row in cursor.fetchall()]
+
+    cursor.execute("Select Email from [Owner]")
+    email_own = [row[0] for row in cursor.fetchall()]
+
+    # Check if email exists in any list
+    if new_email in email_stu or new_email in email_admin or new_email in email_own:
+        # print("The email has been used already.")
+        return False
+
+    # Check name based on role
+    if role == "Admin":
+        cursor.execute("Select Name from [Student]")
+        name_list = [row[0] for row in cursor.fetchall()]
+        if new_name in name_list:
+            # print("The name has been used already.")
+            return False
+        else:
+            # print("Done")
+            return True
+
+    elif role == "Owner":
+        cursor.execute("Select Name from [Admin]")
+        name_list = [row[0] for row in cursor.fetchall()]
+        if new_name in name_list:
+            # print("The name has been used already.")
+            return False
+        else:
+            # print("Done")
+            return True
+
+    return True
+
+
 def stu_profile_info():
     cursor.execute("select * from [Student]")
     user = cursor.fetchall()
@@ -364,11 +404,20 @@ def Delete_All(quiz_id):
 
 
 def delete_user(user_id, role):
-    query = f"DELETE FROM [{role}] WHERE {role}ID = ?"
-    query = f"DELETE FROM [{role}] WHERE {role}ID = ?"
-    query = f"DELETE FROM [{role}] WHERE {role}ID = ?"
+    if role == "Admin":
+        query = f"DELETE FROM Result WHERE GameID in (SELECT GameID FROM Game_Session WHERE StudentID = ?)"
+        cursor.execute(query, generate_user_id(user_id[1:], "Student"))
+        query = f"DELETE FROM Game_Session WHERE StudentID = ?"
+        cursor.execute(query, generate_user_id(user_id[1:], "Student"))
+        query = f"DELETE FROM [Student] WHERE StudentID = ?"
+        cursor.execute(query, generate_user_id(user_id[1:], "Student"))
+        print("HAI")
+    elif role == "Owner":
+        query = f"DELETE FROM AdminStudent WHERE AdminID = ?"
+        cursor.execute(query, generate_user_id(user_id[1:], "Admin"))
+        query = f"DELETE FROM [Admin] WHERE AdminID = ?"
+        cursor.execute(query, generate_user_id(user_id[1:], "Admin"))
     try:
-        cursor.execute(query, (user_id,))
         conn.commit()
         print(f"User {user_id} deleted successfully.")
     except Exception as ex:
@@ -411,5 +460,10 @@ if __name__ == "__main__":
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
     # print(select("Select * from Game_Session where StudentID = 'S0001'"))
-    email = "Seafoodmasterr@gmail.com"
-    print(email.split("@"))
+    [update_DB(f"UPDATE [{i}] SET [Password] = 'c3977a81c8b6c4218e9f922905ec67650de7e044d2806014ccbe95c55d6c34de' "
+               f"WHERE Email = "
+               f"'jasonwong22015@gmail.com'") for i in ['Admin', 'Student', 'Owner']]
+    update_DB(f"Update [Admin] set [Password] = 'c3977a81c8b6c4218e9f922905ec67650de7e044d2806014ccbe95c55d6c34de' "
+              f"where Email = 'jasonwong22015@gmail.com'")
+    [print(i) for i in ["Student", "Admin", "Owner"]]
+    # select(f"Select Name from {[i for i in ['Student', 'Admin', 'Owner']]}")

@@ -162,6 +162,9 @@ class Profile:
         self.Timestamp_col = font(20).render("Time Taken", True, (0, 0, 0))
         self.scroll_offset = 0
         self.max_scroll = 0
+        self.Logout = pygame.image.load(resource_path("assets/icons/cHedrNavLogoutBtn.png"))
+        self.Logout_resize = pygame.transform.scale(self.Logout, (64, 64))
+        self.logout_rect = self.Logout_resize.get_rect(topleft=(1005, 113))
         self.history_rect = pygame.Rect(
             (self.screen.get_width() - 401 * self.scale) / 2,
             120 * self.scale + 100,
@@ -235,6 +238,10 @@ class Profile:
                                                      450 * self.scale,
                                                      285 * self.scale), border_radius=4)
         self.screen.blit(self.name, (155 * self.scale, 65 * self.scale))
+        Logout = pygame.image.load(resource_path("assets/icons/cHedrNavLogoutBtn.png"))
+        Logout_resize = pygame.transform.scale(Logout, (64, 64))
+        logout_rect = Logout_resize.get_rect(topleft=(1005, 113))
+        self.screen.blit(Logout_resize, (1005, 113))
         pygame.draw.circle(self.screen, (217, 217, 217), ((self.screen.get_width() - 336.44 * self.scale) / 2,
                                                           90 * self.scale), 64.56)
         # Header container
@@ -306,7 +313,8 @@ def hash_password(password: str) -> str:
 
 
 class Keyboard_Writing:
-    def __init__(self, screen, max_length=30):
+    def __init__(self, screen, user_info, max_length=30):
+        self.user_info = user_info
         self.pin = None
         self.placeholder = "Password"
         self.placeholder2 = "Confirm Password"  # Placeholder for input2
@@ -328,7 +336,7 @@ class Keyboard_Writing:
         self.input_x = (self.screen.get_width() - 271 * self.scale) / 2 + (241 * self.scale - 420) / 2
         self.input_y = (self.screen.get_height() - 151 * self.scale) / 2 + 70
         self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
-        self.proceed_button = [pygame.Rect((755, 479, 145, 62)), "Gmail"]
+        self.proceed_button = [pygame.Rect((755, 479, 145, 62)), "Password Change"]
         self.x = 0
         self.x2 = 0  # Cursor position for input2
         self.open_overlay = False
@@ -336,6 +344,8 @@ class Keyboard_Writing:
         self.input_1 = pygame.Rect(self.input_x, self.input_y, 380, 50)
         self.input_2 = pygame.Rect(self.input_x, self.input_y + 70, 380, 50)
         self.remaining = 60
+        self.pw_mask = False
+        self.verification = False
 
     def container(self):
         self.overlay.fill((0, 0, 0, 130))
@@ -355,8 +365,19 @@ class Keyboard_Writing:
             self.frame_timer += 1
             self.last_update_time = current_time
             self.shake = not self.shake  # Toggle visibility
-        # Toggle bar color
 
+        # Calculate visible width based on masking
+        if self.active_input == 1:
+            visible_text = "*" * len(self.text) if self.pw_mask else self.text
+            visible_width = self.font.size(visible_text)[0]
+        else:
+            visible_text = "*" * len(self.text2) if self.pw_mask else self.text2
+            visible_width = self.font.size(visible_text)[0]
+
+        # Update x to reflect where the blinking bar should be
+        x = (self.input_1.x if self.active_input == 1 else self.input_2.x) + 10 + visible_width
+
+        # Draw the blinking cursor
         if self.shake:
             pygame.draw.rect(self.screen, (255, 255, 255), (x, y, 3, 40))  # Visible
         else:
@@ -390,7 +411,7 @@ class Keyboard_Writing:
             self.text2 = current_text
             self.x2 = x
         # Update the surface
-        display_text = self.text if self.text else self.placeholder
+        display_text = "*"*len(self.text) if self.pw_mask else self.text if self.text else self.placeholder
         color = pygame.Color('white') if self.text else pygame.Color('lightgray')
         self.txt_surface = self.font.render(display_text, True, color)
 
@@ -402,7 +423,7 @@ class Keyboard_Writing:
 
         if not container_box.collidepoint(mouse_pos):
             self.open_overlay = False
-            self.proceed_button[1] = "Gmail"
+            self.proceed_button[1] = "Password Change"
             self.textfield_width = 0
             self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
             self.otp_start_time = None
@@ -414,6 +435,7 @@ class Keyboard_Writing:
                 self.gmail = self.text
                 self.pin = otp(self.text + "@gmail.com")
                 print(self.pin)
+                print(self.text)
                 self.proceed_button[1] = "OTP"
                 self.clear()
                 self.x = 0
@@ -423,18 +445,29 @@ class Keyboard_Writing:
                     print(self.pin)
                 if self.pin:
                     if self.pin == self.text:
+                        self.pw_mask = True
                         self.proceed_button[1] = "Change"
                         self.clear()
                         self.x = 0
             elif self.proceed_button[1] == "Change":
                 try:
                     if self.text == self.text2:
+                        print("Text: ", self.text)
                         pass_value = hash_password(self.text)
                         update_DB(f"UPDATE [Student] SET [Password] = '{pass_value}' WHERE "
-                                  f"Email = '{self.gmail}@gmail.com'")
+                                  f"Email = "
+                                  f"'{self.user_info[2].split('@')[0] if self.verification else self.gmail}@gmail.com'")
                         self.open_overlay = False
                 except Exception as e:
                     print("ErrorS: ", e)
+            elif self.proceed_button[1] == "Password Change":
+                userpass = select(f"Select Password from [Student] where StudentID = '{self.user_info[0]}'")[0][0]
+                if hash_password(self.text) == userpass:
+                    self.proceed_button[1] = "Change"
+                    self.verification = True
+                    self.clear()
+                    self.x = 0
+                    return
         elif self.proceed_button[1] == "OTP":
             # Check if OTP is being clicked
             try:
@@ -446,14 +479,37 @@ class Keyboard_Writing:
                     self.otp_start_time = pygame.time.get_ticks()
             except Exception as e:
                 print("Error: ", e)
+        elif self.proceed_button[1] == "Password Change":
+            forgot_pass = pygame.Rect(400, 372, 185, 20)
+            if forgot_pass.collidepoint(mouse_pos):
+                self.active_input = 1
+                self.pw_mask = True
+                self.clear()
+                self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
+                self.x = 0
+                self.proceed_button[1] = "Gmail"
+                return
         if self.input_1.collidepoint(mouse_pos):
             self.active_input = 1
         elif self.input_2.collidepoint(mouse_pos):
             self.active_input = 2
 
+    def _drawPw(self):
+        self.container()
+        self.proceed_txt = "Proceed"
+        self.pw_mask = True
+        self.proceed_button[1] = "Password Change"
+        pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
+        pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
+        forgot_password = font(20).render("Forgot Password?", True, (255, 255, 255))
+        self.screen.blit(forgot_password, (400, 372))
+        self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
+        self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
+
     def _drawGmail(self):
         self.container()
         self.proceed_txt = "Proceed"
+        self.pw_mask = False
         self.proceed_button[1] = "Gmail"
         gmail = font(20).render("@Gmail.com", True, (255, 255, 255))
         self.screen.blit(gmail, (783, 315))
@@ -466,6 +522,7 @@ class Keyboard_Writing:
         self.container()
         self.proceed_txt = "Proceed"
         self.proceed_button[1] = "OTP"
+        self.pw_mask = False
         self.textfield_width = 200
         self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
         if self.otp_start_time is None:
@@ -482,13 +539,13 @@ class Keyboard_Writing:
     def _drawChange(self):
         self.container()
         self.proceed_txt = "Done"
+        self.pw_mask = True
         self.proceed_button[1] = "Change"
-
         # Draw input 1 (e.g., New Password)
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_1, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_1, width=3, border_radius=4)
         self.placeholder = "Password"
-        display_text1 = self.text if self.text else self.placeholder
+        display_text1 = "*" * len(self.text) if self.pw_mask and self.text else self.placeholder
         color1 = (255, 255, 255) if self.text else (200, 200, 200)
         txt_surface1 = self.font.render(display_text1, True, color1)
         # Draw cursor if active
@@ -500,7 +557,7 @@ class Keyboard_Writing:
         # Draw input 2 (e.g., Confirm Password)
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_2, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_2, width=3, border_radius=4)
-        display_text2 = self.text2 if self.text2 else self.placeholder2
+        display_text2 = "*" * len(self.text2) if self.pw_mask and self.text2 else self.placeholder2
         color2 = (255, 255, 255) if self.text2 else (200, 200, 200)
         txt_surface2 = self.font.render(display_text2, True, color2)
         self.screen.blit(txt_surface2, (self.input_2.x + 10, self.input_2.y + 5))
@@ -516,11 +573,14 @@ class Keyboard_Writing:
         return self.x
 
     def page(self):
-        if self.proceed_button[1] == "Gmail":
+        if self.proceed_button[1] == "Password Change":
+            return self._drawPw()
+        elif self.proceed_button[1] == "Gmail":
             return self._drawGmail()
         elif self.proceed_button[1] == "OTP":
             return self._drawOTP()
         elif self.proceed_button[1] == "Change":
+            self.pw_mask = True
             # self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
             return self._drawChange()
 

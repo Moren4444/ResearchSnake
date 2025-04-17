@@ -31,12 +31,9 @@ def Menu(player_info):
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
     close = pygame.image.load(resource_path("assets/close.png"))  # Use resource_path
     lock = pygame.image.load(resource_path("assets/locked.png"))  # Use resource_path
+
     lock_resize = pygame.transform.scale(lock, (140, 140))
-    if getattr(sys, 'frozen', False):
-        base_path = sys._MEIPASS  # PyInstaller's temp extraction path
-    else:
-        base_path = os.path.dirname(__file__)  # Normal script execution path
-    click_path = os.path.join(base_path, "assets", "Click_Audio.mp3")
+    click_path = resource_path("assets/Click_Audio.mp3")
     click_sound = pygame.mixer.Sound(click_path)
 
     close_resize = pygame.transform.scale(close, (30, 30))
@@ -75,6 +72,9 @@ def Menu(player_info):
     overlay.fill((0, 0, 0, 130))  # RGBA: Black with 100/255 transparency
     overlay_rect = overlay.get_rect(topleft=(0, 0))
     question_unavailable = sec_font.render("Quiz is not available", True, (255, 255, 255))
+    Quit_Text = sec_font.render("We will miss you!", True, (255, 255, 255))
+    prompt_Text = sec_font.render("Are you sure?", True, (255, 255, 255))
+    yes_button = sec_font.render("YES", True, (255, 255, 255))
     # print(question_unavailable.get_width())
     # Group quizzes by chapter
 
@@ -147,7 +147,10 @@ def Menu(player_info):
         radius * 2
     )
     open_profile = False
-    keyboard = Keyboard_Writing(screen)
+    keyboard = Keyboard_Writing(screen, player_info)
+    Logout = False
+    Confirm_Logout = False
+    confirm_quit = pygame.Rect((screen.get_width() - 280) / 2, (screen.get_height() - 200) / 2, 280, 300)
     while running:
         screen.fill((50, 50, 50))
         loc = font.render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
@@ -212,14 +215,23 @@ def Menu(player_info):
             if event.type == pygame.KEYDOWN:
                 keyboard.handle_keydown(event)
                 if event.key == pygame.K_ESCAPE:
-                    running = False
+                    alert = True
+                    Confirm_Logout = True
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click_sound.play()
                 keyboard.handle_click(mouse_pos)
                 if alert:
                     # Close the overlay if clicked anywhere
                     if overlay_rect.collidepoint(mouse_pos):
-                        alert = False
+                        running = not Logout
+
+                        if confirm_quit.collidepoint(mouse_pos):
+                            if Confirm_Logout and pygame.Rect(540, 530, 200, 50).collidepoint(mouse_pos):
+                                Confirm_Logout = False
+                                Logout = True
+                        else:
+                            alert = False
+                            Confirm_Logout = False
                 elif profile.overlay_rect.collidepoint(mouse_pos):
                     profile_box = pygame.Rect(120, 81, 1157 - 120, 738 - 81)
                     if not profile_box.collidepoint(mouse_pos):
@@ -232,6 +244,9 @@ def Menu(player_info):
                     open_profile = True
                     if profile.change_rect.collidepoint(mouse_pos):
                         keyboard.open_overlay = True
+                    elif profile.logout_rect.collidepoint(mouse_pos):
+                        alert = True
+                        Logout = True
                 else:
                     # Handle quiz clicks only when the overlay is not active
                     for rect, global_idx in list_of_visible_quizzes:
@@ -262,7 +277,7 @@ def Menu(player_info):
                                 print("Issue: ", e)
                     if close_rect.collidepoint(mouse_pos):
                         menu_open = False
-                    elif play_button.collidepoint(mouse_pos):
+                    elif play_button.collidepoint(mouse_pos) and menu_open:
                         selected_quiz = all_quizzes_global[quiz_level][1]  # (chap_id, q_data, g_idx)
                         page_menu(player_info, selected_quiz, return_to_menu, resource_path, quiz_level + 1,
                                   click_sound)
@@ -280,16 +295,6 @@ def Menu(player_info):
                     list_of_visible_quizzes.clear()
                 except Exception as e:
                     print("Event: ", e)
-
-        if open_profile:
-            try:
-                profile._draw()
-            except Exception as e:
-                print(e)
-        if keyboard.open_overlay:
-            open_profile = False
-            keyboard.page()
-            # keyboard.bar_shake(keyboard.input_x + 10 + keyboard.get_x(), keyboard.input_y + 5)
 
         if menu_open:
             level_click = quiz[quiz_level]
@@ -324,10 +329,34 @@ def Menu(player_info):
         if show_left: screen.blit(left[0], left[1])
         if show_right: screen.blit(right[0], right[1])
 
+        if open_profile:
+            try:
+                profile._draw()
+            except Exception as e:
+                print(e)
+        if keyboard.open_overlay:
+            open_profile = False
+            keyboard.page()
+            # keyboard.bar_shake(keyboard.input_x + 10 + keyboard.get_x(), keyboard.input_y + 5)
+
         if alert:
             screen.blit(overlay, (0, 0))
-            pygame.draw.rect(screen, (100, 100, 100), (480, 350, 320, 100), border_radius=10)
-            screen.blit(question_unavailable, (492, 390))
+            if Confirm_Logout:
+                pygame.draw.rect(screen, (100, 100, 100), confirm_quit, border_radius=10)
+                screen.blit(prompt_Text, (500 + (280 - prompt_Text.get_width())/2, 340))
+                pygame.draw.rect(screen, (0, 131, 96), (540, 530, 200, 50))
+                screen.blit(yes_button, (540 + (200 - yes_button.get_width())/2,
+                                         530 + (50 - yes_button.get_height())/2))
+
+            elif Logout:
+                open_profile = False
+                pygame.draw.rect(screen, (100, 100, 100), ((screen.get_width() - 480)/2,
+                                                           (screen.get_height() - 200)/2, 480, 200), border_radius=10)
+                screen.blit(Quit_Text, ((screen.get_width() - Quit_Text.get_width())/2,
+                                        (screen.get_height() - Quit_Text.get_height())/2))
+            else:
+                pygame.draw.rect(screen, (100, 100, 100), (480, 350, 320, 100), border_radius=10)
+                screen.blit(question_unavailable, (492, 390))
 
         pygame.display.update()
     pygame.quit()
