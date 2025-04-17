@@ -29,8 +29,11 @@ def generate_question_id(selected_id):
 
 
 def generate_user_id(selected_id, role):
-    prefix = "S" if role == "Student" else "OW" if role == "Owner" else "A"
-    return prefix + str(int(selected_id)).zfill(4) if selected_id else f"{prefix}0001"
+    prefix = "S" if role == "Student" else "O" if role == "Owner" else "A"
+    if role == "Owner":
+        return prefix + str(int(selected_id)).zfill(2) if selected_id else f"{prefix}01"
+    else:
+        return prefix + str(int(selected_id)).zfill(4) if selected_id else f"{prefix}0001"
 
 
 def generate_chapter_id(selected_id):
@@ -263,7 +266,7 @@ def Update_Question(quiz_id, old_question, new_question, new_options, correct_an
     cursor.commit()
 
 
-def Add_Question(selected_id, admin_ID):
+def Add_Question(selected_id, admin_name):
     query_id = "SELECT MAX(CAST(SUBSTRING(QuestionID, 2, LEN(QuestionID)) AS INT)) FROM Question"
     query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     cursor.execute(query_id)
@@ -273,8 +276,9 @@ def Add_Question(selected_id, admin_ID):
     if id_exe:
         new_ID = int(id_exe)
     print(generate_quiz_id(selected_id))
+    print("Admin Name: ", admin_name)
     cursor.execute(query, generate_question_id(new_ID + 1), f"Question {new_ID + 1}", "A", "Option 1", "Option 2"
-                   , "Option 3", "Option 4", generate_quiz_id(selected_id), admin_ID)
+                   , "Option 3", "Option 4", generate_quiz_id(selected_id), admin_name)
     cursor.commit()
 
 
@@ -343,6 +347,7 @@ def Add_ChapterDB():
 
 def Delete_QuizLVL(quiz_id):
     query = "Delete from Quiz where QuizID = ?"
+    print("Delete_QuizLVL: ", generate_quiz_id(quiz_id))
     try:
         cursor.execute(query, generate_quiz_id(quiz_id))
 
@@ -353,6 +358,7 @@ def Delete_QuizLVL(quiz_id):
 
 def Delete_All(quiz_id):
     query = "Delete from Question where QuizID = ?"
+    print("Question: ", generate_quiz_id(quiz_id))
     cursor.execute(query, generate_quiz_id(quiz_id))
     cursor.commit()
 
@@ -405,5 +411,5 @@ if __name__ == "__main__":
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
     # print(select("Select * from Game_Session where StudentID = 'S0001'"))
-    count = 0
-    print(select_user("01", "Owner"))
+    email = "Seafoodmasterr@gmail.com"
+    print(email.split("@"))
