@@ -17,7 +17,7 @@ def profile_management(page: ft.Page, role, audio1, audio2):
         reg_date = str(user_info.RegisteredDate)
         lastLogin_date = user_info.LastLogin
     elif role == "Owner":
-        user_info = select_user(int(user_id[2:]), "Owner")
+        user_info = select_user(int(user_id[1:]), "Owner")
         print(" Owner", user_id)
         print(user_info)
         username = user_info.Name
