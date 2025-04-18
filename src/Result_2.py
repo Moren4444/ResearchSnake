@@ -12,7 +12,7 @@ def wrap_text_word_based(text, max_width, font):
     Returns the wrapped lines and a boolean indicating if all lines have been completed.
     """
     words = text.split(" ")
-    lines = []
+    lines = []  
     current_line = ""
     for word in words:
         if current_line == "":
@@ -57,7 +57,7 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
         arrows = pygame.image.load(path)
         arrows = pygame.transform.scale(arrows, (32 * 2, 32 * 2))
         return [arrows, arrows.get_rect(topleft=position)]
-
+    print(chapter_info, user_answer, player_info)
     running = True
     font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 20)
     sec_font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30)
@@ -68,16 +68,16 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
     proceed_button = pygame.Rect(427.15 * scale, 247 * scale, 99 * scale, 38 * scale)
 
     list_of_answer = []
-    for index, i in enumerate(Retrieve_Question(chapter_info[0], "CorrectAnswer")):
+    for index, i in enumerate(Retrieve_Question(chapter_info[0][3:], "CorrectAnswer")):
         if i == "A":
-            list_of_answer.append(Retrieve_Question(chapter_info[0], "Option1")[index])
+            list_of_answer.append(Retrieve_Question(chapter_info[0][3:], "Option1")[index])
         elif i == "B":
-            list_of_answer.append(Retrieve_Question(chapter_info[0], "Option2")[index])
+            list_of_answer.append(Retrieve_Question(chapter_info[0][3:], "Option2")[index])
         elif i == "C":
-            list_of_answer.append(Retrieve_Question(chapter_info[0], "Option3")[index])
+            list_of_answer.append(Retrieve_Question(chapter_info[0][3:], "Option3")[index])
         elif i == "D":
-            list_of_answer.append(Retrieve_Question(chapter_info[0], "Option4")[index])
-    list_of_questions = Retrieve_Question(chapter_info[0], "Question")
+            list_of_answer.append(Retrieve_Question(chapter_info[0][3:], "Option4")[index])
+    list_of_questions = Retrieve_Question(chapter_info[0][3:], "Question")
     questions = len(list_of_questions)
     questions_per_page = 5
     current_page = 0
@@ -113,7 +113,7 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                     Push_l = "pushed"
                 elif proceed_button.collidepoint(event.pos):
                     print("Result proceed...")
-                    return_menu(select_user(player_info[0]))
+                    return_menu(select_user(player_info[3:], "Student"))
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 if right[1].collidepoint(event.pos):

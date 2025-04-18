@@ -1,14 +1,14 @@
 import pygame
 from snakes import Game
 from Resouce import Buttons
-from database import Retrieve_Question, update
+from database import Retrieve_Question, update, resultDB
 from Result_2 import result
+from datetime import datetime
 # from Menu import Menu
 
 
-def Game_page(player_info, difficulties, return_menu, resource_path, chapter_info):
+def Game_page(player_info, difficulties, return_menu, resource_path, chapter_info, quiz_level, click):
     pygame.init()
-    print("Initial")
     running = True
     fullscreen = True
     color = (16, 196, 109)
@@ -24,7 +24,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
     clock = pygame.time.Clock()
     is_alive = True
-    game = Game(800, 412, screen, 1, 10000, resource_path)
+    game = Game(800, 412, screen, 1, 10000, resource_path, difficulties)
     option = Buttons(screen, resource_path)
     open_setting = False
     game_over = False
@@ -68,14 +68,17 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     proceed_rect = proceed_s.get_rect(topleft=(364.8 * 2, 294.8 * 2))
     proceed_rect_over = proceed_s.get_rect(topleft=(200 + (screen.get_width() - Restart_s.get_width()) / 2, 460))
     questions = 0
-    list_Question = Retrieve_Question(chapter_info[0], "Question")
-    print(list_Question)
-    Option_title = Retrieve_Question(chapter_info[0], "Option1, Option2, Option3, Option4")
-    print("Option Title: ", Option_title)
-    answer = Retrieve_Question(chapter_info[0], "CorrectAnswer")
+    print("From GamePage: ", chapter_info[0])
+    list_Question = Retrieve_Question(chapter_info[0][3:], "Question")
+    Option_title = Retrieve_Question(chapter_info[0][3:], "Option1, Option2, Option3, Option4")
+
+    answer = Retrieve_Question(chapter_info[0][3:], "CorrectAnswer")
     game_over_text = fonts.render("GAME OVER", True, (255, 255, 255))
     hit = False
     player_proceed = False
+    death_sound_played = False
+    set_str = datetime.now().strftime('%H:%M:%S')
+    set_time = datetime.strptime(set_str, "%H:%M:%S")  # convert to datetime
     try:
         while running:
             screen.fill((50, 50, 50))
@@ -94,7 +97,6 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         # else:
                         #     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)  # Back to fullscreen
                         #     fullscreen = True
-                        print(running)
                         if open_setting:
                             open_setting = False
                             game.resume()
@@ -102,11 +104,13 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             open_setting = True
                             game.pause()  # Pause timer when opening the menu
                 elif event.type == pygame.MOUSEBUTTONDOWN:
+                    click.play()
                     if game_over:
                         if Restart_rect_over.collidepoint(event.pos):
                             try:
                                 body_count = 3
-                                game = Game(800, 412, screen, 1, 10000, resource_path)  # Reinitialize the game
+                                game = Game(800, 412, screen, 1, 10000, resource_path, difficulties)
+                                # Reinitialize the game
                                 is_alive = True
                                 open_setting = False
                                 game_over = False
@@ -120,12 +124,14 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         elif proceed_rect.collidepoint(event.pos) or proceed_rect_over.collidepoint(event.pos):
                             print("Proceed..")
                             try:
-                                print(f"checking: {chapter_info[3]}, {player_info[0]}")
+                                print(f"checking: {quiz_level}, {player_info[4]}")
+                                print(player_info[0])
                                 # Update the player's level in the database
-
-                                if int(chapter_info[3]) >= int(player_info[3]):
-                                    update("[User]", "[Level]", int(player_info[3]) + 1, player_info[0])
-                                result(chapter_info, user_answer, resource_path, return_menu, player_info)
+                                if quiz_level >= int(player_info[4]):
+                                    update("[Student]", "[Level]", int(player_info[4]) + 1,
+                                           player_info[0], "Student")
+                                resultDB(player_info[0], quiz_level, chapter_info, user_answer, difficulties, set_time)
+                                result(chapter_info, user_answer, resource_path, return_menu, player_info[0])
                             except Exception as e:
                                 print("Error: ", e)
                             # running = False
@@ -149,7 +155,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         elif Restart_rect.collidepoint(event.pos):
                             try:
                                 body_count = 3
-                                game = Game(800, 412, screen, 1, 10000, resource_path)  # Reinitialize the game
+                                game = Game(800, 412, screen, 1, 10000, resource_path, difficulties)  # Reinitialize the game
                                 is_alive = True
                                 open_setting = False
                                 game_over = False
@@ -161,9 +167,6 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             except Exception as e:
                                 print("Error restart: ", e)
                         elif Quit_rect.collidepoint(event.pos):
-                            print("Quit")
-                            print("Quit_rect position:", Quit_rect.topleft)
-                            print("Restart_rect_over position:", Restart_rect_over.topleft)
                             running = False
 
             if not fullscreen:
@@ -193,6 +196,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                     is_alive = False
                     [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
                     game_over = True
+                game.pause()
                 # pygame.draw.rect(screen, color, (29 * 2, 27 * 2, 250 * 2, 10.85 * 2),
                 #                  border_top_left_radius=5, border_top_right_radius=5)
                 pygame.draw.rect(screen, (103, 111, 147), (114, 98, 388, 208), border_radius=5)
@@ -208,13 +212,12 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                  border_radius=5)
 
                 if position:
-                    if position[0] < 620 + 40 or position[0] > 1120 - 40:
+                    if position[0] < 620 + 40 or position[0] > 1120 - 40 or position[1] < 82 or position[1] > 692 - 40:
                         is_alive = False
                         game_over = True
-                        [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
-                    elif position[1] < 82 or position[1] > 692 - 40:
-                        is_alive = False
-                        game_over = True
+                        if not death_sound_played:
+                            game.snake.death_sound.play()
+                            death_sound_played = True  # ✅ Prevent future replays
                         [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
                     else:
                         hit = option.check_collision(position)  # Check for collisions with buttons
@@ -259,10 +262,11 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                                    font, 125, 632, 5, 422)
 
                         if not open_setting and done:
-                            if not game.timer_started:
-                                game.time_bar_start = pygame.time.get_ticks()  # Start timer here
-                                game.timer_started = True
+                            # if not game.timer_started:
+                            #     game.time_bar_start = pygame.time.get_ticks()  # Start timer here
+                            #     game.timer_started = True
                             game._update(1, body_count, is_alive)
+                            game.resume()
 
                 except IndexError:
                     # open_setting = True
@@ -295,7 +299,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         screen.blit(proceed_s, (200 + (screen.get_width() - proceed_s.get_width()) / 2, 450))
 
             pygame.display.update()
-            clock.tick(difficulties)
+            # clock.tick(difficulties)
     except Exception as f:
         print("Something went wrong: ", f)
     pygame.quit()
