@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import sys
 
@@ -144,6 +145,12 @@ def spacing(text):
     return -15 if len(str(text)) == 1 else -5
 
 
+def load():
+    if os.path.exists("user_credentials.json"):
+        with open("user_credentials.json", "r") as file:
+            return json.load(file)
+
+
 class Profile:
     def __init__(self, screen, student_info):
         self.screen = screen
@@ -165,6 +172,10 @@ class Profile:
         self.Logout = pygame.image.load(resource_path("assets/icons/cHedrNavLogoutBtn.png"))
         self.Logout_resize = pygame.transform.scale(self.Logout, (64, 64))
         self.logout_rect = self.Logout_resize.get_rect(topleft=(1005, 113))
+        self.open_profile = [False, False]
+        self.list_avatar = []
+        self.img = load()["img"]
+        print(self.img)
         self.history_rect = pygame.Rect(
             (self.screen.get_width() - 401 * self.scale) / 2,
             120 * self.scale + 100,
@@ -172,12 +183,44 @@ class Profile:
             153 * self.scale
         )
         self.change_rect = pygame.Rect(872, 221, 225, 50)
+        self.center = ((self.screen.get_width() - 336.44 * self.scale) / 2, 90 * self.scale)
+        self.profile_rect = pygame.Rect(
+            self.center[0] - 64.56,
+            self.center[1] - 64.56,
+            64.56 * 2,
+            64.56 * 2
+        )
+
+    def handle_click(self, mouse_pos):
+        profile_box = pygame.Rect(120, 81, 1157 - 120, 738 - 81)
+        select_box = pygame.Rect(333, 261, 661, 343)
+        if self.overlay_rect.collidepoint(mouse_pos):
+            if self.open_profile[1]:
+                if not select_box.collidepoint(mouse_pos):
+                    self.open_profile[1] = False
+
+            elif not profile_box.collidepoint(mouse_pos):
+                self.open_profile[0] = False
+
+        if self.profile_rect.collidepoint(mouse_pos) and self.open_profile[0]:
+            self.open_profile[1] = True
+        if self.open_profile[1]:
+            for index, rect in enumerate(self.list_avatar):
+                if rect.collidepoint(mouse_pos):
+                    print(f"Clicked on avatar {index}")
+                    update = load()
+                    update["img"] = f"Pic{index + 1}.png"
+                    self.img = update["img"]
+                    with open("user_credentials.json", "w") as file:
+                        json.dump(update, file)
+                    return
 
     def records(self):
         count = 0
         pygame.init()
         self.list_records = []
-        game_session = select(f"select * from Game_Session where StudentID = '{self.student_info[0]}'")
+        game_session = select(f"select top 15 * from Game_Session where StudentID = '{self.student_info[0]}' "
+                              f"order by cast(Substring(GameID, len(GameID), 3) as int) desc")
         self.max_scroll = max(0, (len(game_session) - 3) * self.y_offset[0])
         for index, i in enumerate(game_session):
             container_y = 130 * self.scale + 100 + (self.y_offset[0] * index) - self.scroll_offset  # Add scroll offset
@@ -228,7 +271,41 @@ class Profile:
                                          questions_y))
             self.screen.blit(correct, (121.28 * self.scale + (self.x_offset * 2) + 169 + spacing(count),
                                        correct_y))
-            self.screen.blit(timestamp, (307 * self.scale + 165 + (timestamp.get_width() / 2), timestamp_y))
+            self.screen.blit(timestamp, (876 + (137 - timestamp.get_width()) / 2, timestamp_y))
+
+    def select_avatar(self):
+        self.overlay.fill((0, 0, 0, 130))
+        self.screen.blit(self.overlay, (0, 0))
+        pygame.draw.rect(self.screen, (69, 69, 69), (333, 261, 661, 343))
+        # Path to image folder
+        image_folder = os.path.join(os.path.abspath("."), "assets/Avatar/")
+
+        # List all files in the folder
+        image_files = [f for f in os.listdir(image_folder) if f.lower().endswith('.png')]
+
+        # Load and resize all images
+        all_pics = []
+        for filename in image_files:
+            full_path = os.path.join(image_folder, filename)
+            # Load and scale the image
+            image = pygame.image.load(full_path).convert_alpha()
+            resized_image = pygame.transform.scale(image, (90, 90))
+            size = resized_image.get_size()
+
+            # Create a circular mask
+            mask_surface = pygame.Surface(size, pygame.SRCALPHA)
+            pygame.draw.circle(mask_surface, (255, 255, 255, 255), (size[0] // 2, size[1] // 2), min(size) // 2)
+
+            # Apply mask to the resized image
+            circular_image = resized_image.copy()
+            circular_image.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+            all_pics.append(circular_image)
+
+        # Display all images in a row
+        for index, img in enumerate(all_pics):
+            self.list_avatar.append(pygame.Rect(382 + index * 150, 306, 90, 90))
+            self.screen.blit(img, (382 + index * 130, 306))
 
     def _draw(self):
         self.overlay.fill((0, 0, 0, 130))
@@ -242,8 +319,25 @@ class Profile:
         Logout_resize = pygame.transform.scale(Logout, (64, 64))
         logout_rect = Logout_resize.get_rect(topleft=(1005, 113))
         self.screen.blit(Logout_resize, (1005, 113))
-        pygame.draw.circle(self.screen, (217, 217, 217), ((self.screen.get_width() - 336.44 * self.scale) / 2,
-                                                          90 * self.scale), 64.56)
+        if bool(self.img):
+            try:
+                full_path = os.path.join("assets", "Avatar", self.img)
+                image = pygame.image.load(full_path).convert_alpha()
+                resized_image = pygame.transform.scale(image, (128, 128))
+                size = resized_image.get_size()
+
+                # Create a circular mask
+                mask_surface = pygame.Surface(size, pygame.SRCALPHA)
+                pygame.draw.circle(mask_surface, (255, 255, 255, 255), (size[0] // 2, size[1] // 2), min(size) // 2)
+
+                # Apply mask to the resized image
+                circular_image = resized_image.copy()
+                circular_image.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                self.screen.blit(circular_image, (206, 166))
+            except Exception as e:
+                print("What is: ", e)
+        else:
+            pygame.draw.circle(self.screen, (217, 217, 217), (253.904, 207), 64.56)
         # Header container
         pygame.draw.rect(self.screen, (126, 122, 122), ((self.screen.get_width() - 401 * self.scale) / 2,
                                                         93 * self.scale + 100,
@@ -300,6 +394,12 @@ class Profile:
                               scrollbar_height),
                              border_radius=5)
 
+    def page(self):
+        if self.open_profile[0]:
+            self._draw()
+        if self.open_profile[1]:
+            self.select_avatar()
+
 
 def countdown(start_time, duration=60):
     elapsed_ms = pygame.time.get_ticks() - start_time
@@ -346,6 +446,8 @@ class Keyboard_Writing:
         self.remaining = 60
         self.pw_mask = False
         self.verification = False
+        self.error = ""
+        self.error_label = font(20).render(self.error, True, (199, 0, 0))
 
     def container(self):
         self.overlay.fill((0, 0, 0, 130))
@@ -411,7 +513,7 @@ class Keyboard_Writing:
             self.text2 = current_text
             self.x2 = x
         # Update the surface
-        display_text = "*"*len(self.text) if self.pw_mask else self.text if self.text else self.placeholder
+        display_text = "*" * len(self.text) if self.pw_mask else self.text if self.text else self.placeholder
         color = pygame.Color('white') if self.text else pygame.Color('lightgray')
         self.txt_surface = self.font.render(display_text, True, color)
 
@@ -433,12 +535,18 @@ class Keyboard_Writing:
         if self.proceed_button[0].collidepoint(mouse_pos):
             if self.proceed_button[1] == "Gmail":
                 self.gmail = self.text
-                self.pin = otp(self.text + "@gmail.com")
-                print(self.pin)
-                print(self.text)
-                self.proceed_button[1] = "OTP"
-                self.clear()
-                self.x = 0
+                print("Testing: ", self.gmail, bool(self.gmail))
+                if not bool(self.gmail):
+                    self.error = "Email cannot be empty"
+                    self.error_label = font(20).render(self.error, True, (199, 0, 0))
+                    print(self.error)
+                else:
+                    self.pin = otp(self.text + "@gmail.com")
+                    print(self.pin)
+                    print(self.text)
+                    self.proceed_button[1] = "OTP"
+                    self.clear()
+                    self.x = 0
             elif self.proceed_button[1] == "OTP":
                 if self.remaining == 0:
                     self.pin = None
@@ -449,29 +557,42 @@ class Keyboard_Writing:
                         self.proceed_button[1] = "Change"
                         self.clear()
                         self.x = 0
+                    else:
+                        self.error = "Incorrect Pin"
+                        self.error_label = font(20).render(self.error, True, (199, 0, 0))
             elif self.proceed_button[1] == "Change":
                 try:
-                    if self.text == self.text2:
+                    if not bool(self.text) and not bool(self.text2):
+                        self.error = "Field is required"
+                    elif self.text == self.text2:
                         print("Text: ", self.text)
                         pass_value = hash_password(self.text)
                         update_DB(f"UPDATE [Student] SET [Password] = '{pass_value}' WHERE "
                                   f"Email = "
                                   f"'{self.user_info[2].split('@')[0] if self.verification else self.gmail}@gmail.com'")
                         self.open_overlay = False
+                    else:
+                        self.error = "Password is not match"
+                    self.error_label = font(20).render(self.error, True, (199, 0, 0))
                 except Exception as e:
                     print("ErrorS: ", e)
             elif self.proceed_button[1] == "Password Change":
                 userpass = select(f"Select Password from [Student] where StudentID = '{self.user_info[0]}'")[0][0]
-                if hash_password(self.text) == userpass:
+                if not bool(self.text):
+                    self.error = "Field is required"
+                elif hash_password(self.text) == userpass:
                     self.proceed_button[1] = "Change"
                     self.verification = True
                     self.clear()
                     self.x = 0
                     return
+                else:
+                    self.error = "Incorrect Password"
+                self.error_label = font(20).render(self.error, True, (199, 0, 0))
         elif self.proceed_button[1] == "OTP":
             # Check if OTP is being clicked
             try:
-                otp_rect = pygame.Rect(400, 372, 70, 20)
+                otp_rect = pygame.Rect(400, 412, 70, 20)
                 # This should match your blit position and approximate text size
                 if otp_rect.collidepoint(mouse_pos):
                     self.pin = otp(self.gmail + "@gmail.com")
@@ -480,7 +601,7 @@ class Keyboard_Writing:
             except Exception as e:
                 print("Error: ", e)
         elif self.proceed_button[1] == "Password Change":
-            forgot_pass = pygame.Rect(400, 372, 185, 20)
+            forgot_pass = pygame.Rect(400, 412, 185, 20)
             if forgot_pass.collidepoint(mouse_pos):
                 self.active_input = 1
                 self.pw_mask = True
@@ -502,7 +623,8 @@ class Keyboard_Writing:
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
         forgot_password = font(20).render("Forgot Password?", True, (255, 255, 255))
-        self.screen.blit(forgot_password, (400, 372))
+        self.screen.blit(self.error_label, (400, 372))
+        self.screen.blit(forgot_password, (400, 412))
         self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
         self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
 
@@ -515,6 +637,7 @@ class Keyboard_Writing:
         self.screen.blit(gmail, (783, 315))
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
+        self.screen.blit(self.error_label, (400, 372))
         self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
         self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
 
@@ -532,9 +655,10 @@ class Keyboard_Writing:
                                    True, (255, 255, 255))
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
+        self.screen.blit(self.error_label, (400, 372))
         self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
         self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
-        self.screen.blit(self.Otp, (400, 372))
+        self.screen.blit(self.Otp, (400, 412))
 
     def _drawChange(self):
         self.container()
@@ -560,6 +684,7 @@ class Keyboard_Writing:
         display_text2 = "*" * len(self.text2) if self.pw_mask and self.text2 else self.placeholder2
         color2 = (255, 255, 255) if self.text2 else (200, 200, 200)
         txt_surface2 = self.font.render(display_text2, True, color2)
+        self.screen.blit(self.error_label, (400, 442))
         self.screen.blit(txt_surface2, (self.input_2.x + 10, self.input_2.y + 5))
         # Draw cursor if active
         if self.active_input == 2:
@@ -590,4 +715,6 @@ class Keyboard_Writing:
         self.text = ""
         self.text2 = ""
         self.x2 = 0
+        self.error = ""
+        self.error_label = font(20).render(self.error, True, (199, 0, 0))
         self.x = 0

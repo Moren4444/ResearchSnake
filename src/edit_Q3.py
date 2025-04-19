@@ -172,6 +172,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         correct_answer = chr(65 + correct_index)  # Convert to A-D
         question_database = Retrieve_Question(selected_index, "Question")[current_q_index]
         check = questions
+        print("Before check: ", check)
         check.pop(current_q_index)
         print("Check: ", check)
         index = 0
@@ -209,6 +210,16 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
                     questions.clear()
                     update_column(selected_index)
                     page.update()
+                else:
+                    dlg = ft.AlertDialog(
+                        title=ft.Text("Duplicated questions detected"),
+                        on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
+                    )
+                    page.open(dlg)
+                    print("Else: ", questions)
+                    questions.append(current_question)
+                    print("After Else: ", questions)
+                    check = questions
             index += 1
 
         # Load the pending question if there is one
@@ -586,8 +597,8 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         dd.update()
 
     def confirm_delete_quiz(e):
-        Delete_All(len(chapter_quizzes[selected_chapter_index]))
-        Delete_QuizLVL(len(chapter_quizzes[selected_chapter_index]))
+        Delete_All(chapter_quizzes[selected_chapter_index][-1][0][3:])
+        Delete_QuizLVL(chapter_quizzes[selected_chapter_index][-1][0][3:])
 
         page.open(delete_snack)
 
@@ -614,7 +625,8 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             )
             page.open(dlg)
         else:
-            if Delete_QuizLVL(len(chapter_quizzes[selected_chapter_index])):
+            print("Test: ", chapter_quizzes[selected_chapter_index][-1][0][3:])
+            if Delete_QuizLVL(chapter_quizzes[selected_chapter_index][-1][0][3:]):
                 page.open(delete_quiz)
             else:
                 chapter_quizzes[selected_chapter_index].pop(-1)
