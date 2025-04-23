@@ -46,10 +46,13 @@ def hash_password(password: str) -> str:
 
 def load_login_credentials():
     """Load credentials from the JSON file."""
-    if os.path.exists("user_credentials.json"):
-        with open("user_credentials.json", "r") as file:
-            return json.load(file)
-    return {"username": "", "password": "", "img": ""}  # Return empty values if file doesn't exist
+    try:
+        if os.path.exists("user_credentials.json"):
+            with open("user_credentials.json", "r") as file:
+                return json.load(file)
+        return {"username": "", "password": "", "img": ""}  # Return empty values if file doesn't exist
+    except Exception as e:
+        return {"username": "", "password": "", "img": ""}  # Return empty values if file doesn't exist
 
 
 username_error = ft.Text("", weight=ft.FontWeight.BOLD, size=15, color="red", visible=True)
@@ -128,6 +131,7 @@ def main(page: ft.Page):
         label="Username",
         value=load_login_credentials().get("username", ""),
         bgcolor="#343434",
+        color="#FFFFFF",
         width=156.5 * 3,
         border_radius=8,
         border_color="#FFFFFF",
@@ -141,7 +145,6 @@ def main(page: ft.Page):
         color="#FFFFFF",
         border_radius=8,
         password=True,
-        can_reveal_password=True,
         border_color="#FFFFFF",
     )
     role = None
@@ -149,7 +152,7 @@ def main(page: ft.Page):
     # Create a container to hold the background image
     background_container = ft.Container(
         content=ft.Image(
-            src=forest_image_path,  # Replace with your image path
+            src="https://cdnb.artstation.com/p/assets/images/images/037/263/051/original/karina-formanova-rainforest-animation.gif?1619929364",  # Replace with your image path
             width=1525,
             height=800,
             fit=ft.ImageFit.COVER  # Ensure the image covers the entire space
@@ -545,7 +548,6 @@ def main(page: ft.Page):
         password = password_field.value.strip()
         hashed_password = hash_password(password)  # Hash the entered password
         print(hashed_password)
-
         # Validate input
         if username == "":
             username_error.value = "Username is empty"
@@ -561,10 +563,11 @@ def main(page: ft.Page):
             if (username, hashed_password) == stored_user:
                 print("✅ Correct Login!")
                 last_Update(i[0], role)
-                if not remember_me.value and os.path.exists("user_credentials.json"):
+                if not remember_me.value:
                     delete_login_credentials()
                 elif remember_me.value:
                     save_login_credentials(username_field.value, password_field.value)
+
                 # page.session.set("username", i[1])  # Store username
                 # page.session.set("password", i[2])  # Store password
                 page.session.set("user_id", i[0])  # Store user ID for database update

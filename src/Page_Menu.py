@@ -20,8 +20,9 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
     description_letter_index = 0
     # chapter_info = eval(sys.argv[1])
     print(chapter_info)
-    Chapter = small_font.render(f"Chapter {int(chapter_info[0][3:])}", True, (255, 255, 255))
-
+    Chapter = small_font.render(f"Chapter {int(chapter_info[-2][3:])}", True, (0, 0, 0))
+    background = pygame.image.load(resource_path(f"assets/Background.jpg"))
+    background_scale = pygame.transform.scale(background, (1280, 800))
     last_update_time = pygame.time.get_ticks()
     scale = 2.8764
 
@@ -51,8 +52,11 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
     while running:
         screen.fill((50, 50, 50))
         mouse = pygame.mouse.get_pos()
+        screen.blit(background_scale, (0, 0))
         arrow_sprite, arrow_rect = arrow(push=Push)  # Get arrow image & rect
         for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
@@ -73,6 +77,7 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
                     print("Start button clicked")
                     running = False  # Exit the current Pygame loop
                     try:
+                        pygame.mixer.music.stop()
                         Game_page(player_info, selected[1], return_to_menu_callback, resource_path,
                                   chapter_info, quiz_level, click)
                         pygame.display.quit()  # Close the current Pygame window

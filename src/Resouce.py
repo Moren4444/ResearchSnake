@@ -174,7 +174,7 @@ class Profile:
         self.logout_rect = self.Logout_resize.get_rect(topleft=(1005, 113))
         self.open_profile = [False, False]
         self.list_avatar = []
-        self.img = load()["img"]
+        self.img = load()["img"] if os.path.exists("user_credentials.json") else None
         print(self.img)
         self.history_rect = pygame.Rect(
             (self.screen.get_width() - 401 * self.scale) / 2,
@@ -219,8 +219,11 @@ class Profile:
         count = 0
         pygame.init()
         self.list_records = []
-        game_session = select(f"select top 15 * from Game_Session where StudentID = '{self.student_info[0]}' "
-                              f"order by cast(Substring(GameID, len(GameID), 3) as int) desc")
+        try:
+            game_session = select(f"select top 15 * from Game_Session where StudentID = '{self.student_info[0]}' "
+                                  f"ORDER BY CAST(SUBSTRING(GameID, 3, LEN(GameID) - 2) AS INT) DESC")
+        except Exception as e:
+            print(e)
         self.max_scroll = max(0, (len(game_session) - 3) * self.y_offset[0])
         for index, i in enumerate(game_session):
             container_y = 130 * self.scale + 100 + (self.y_offset[0] * index) - self.scroll_offset  # Add scroll offset
@@ -278,34 +281,41 @@ class Profile:
         self.screen.blit(self.overlay, (0, 0))
         pygame.draw.rect(self.screen, (69, 69, 69), (333, 261, 661, 343))
         # Path to image folder
-        image_folder = os.path.join(os.path.abspath("."), "assets/Avatar/")
+        try:
+            image_folder = resource_path("assets/Avatar/")
 
-        # List all files in the folder
-        image_files = [f for f in os.listdir(image_folder) if f.lower().endswith('.png')]
+            # List all files in the folder
+            image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(('.png', '.jpg'))]
 
-        # Load and resize all images
-        all_pics = []
-        for filename in image_files:
-            full_path = os.path.join(image_folder, filename)
-            # Load and scale the image
-            image = pygame.image.load(full_path).convert_alpha()
-            resized_image = pygame.transform.scale(image, (90, 90))
-            size = resized_image.get_size()
+            # Load and resize all images
+            all_pics = []
+            for filename in image_files:
+                full_path = os.path.join(image_folder, filename)
+                try:
+                    # Load and scale the image
+                    image = pygame.image.load(full_path).convert_alpha()
+                    resized_image = pygame.transform.scale(image, (90, 90))
+                    size = resized_image.get_size()
 
-            # Create a circular mask
-            mask_surface = pygame.Surface(size, pygame.SRCALPHA)
-            pygame.draw.circle(mask_surface, (255, 255, 255, 255), (size[0] // 2, size[1] // 2), min(size) // 2)
+                    # Create a circular mask
+                    mask_surface = pygame.Surface(size, pygame.SRCALPHA)
+                    pygame.draw.circle(mask_surface, (255, 255, 255, 255), (size[0] // 2, size[1] // 2), min(size) // 2)
 
-            # Apply mask to the resized image
-            circular_image = resized_image.copy()
-            circular_image.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                    # Apply mask to the resized image
+                    circular_image = resized_image.copy()
+                    circular_image.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
-            all_pics.append(circular_image)
+                    all_pics.append(circular_image)
+                except Exception as e:
+                    print(f"Error loading {filename}: {e}")
+                    continue
 
-        # Display all images in a row
-        for index, img in enumerate(all_pics):
-            self.list_avatar.append(pygame.Rect(382 + index * 150, 306, 90, 90))
-            self.screen.blit(img, (382 + index * 130, 306))
+            # Display all images in a row
+            for index, img in enumerate(all_pics):
+                self.list_avatar.append(pygame.Rect(382 + index * 130, 306, 90, 90))
+                self.screen.blit(img, (382 + index * 130, 306))
+        except Exception as e:
+            print("What: ", e)
 
     def _draw(self):
         self.overlay.fill((0, 0, 0, 130))
@@ -317,11 +327,10 @@ class Profile:
         self.screen.blit(self.name, (155 * self.scale, 65 * self.scale))
         Logout = pygame.image.load(resource_path("assets/icons/cHedrNavLogoutBtn.png"))
         Logout_resize = pygame.transform.scale(Logout, (64, 64))
-        logout_rect = Logout_resize.get_rect(topleft=(1005, 113))
         self.screen.blit(Logout_resize, (1005, 113))
         if bool(self.img):
             try:
-                full_path = os.path.join("assets", "Avatar", self.img)
+                full_path = resource_path(f"assets/Avatar/{self.img}")
                 image = pygame.image.load(full_path).convert_alpha()
                 resized_image = pygame.transform.scale(image, (128, 128))
                 size = resized_image.get_size()
