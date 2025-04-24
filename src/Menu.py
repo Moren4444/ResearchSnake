@@ -4,7 +4,7 @@ from Result_2 import wrap_text_word_based
 import sys
 import os
 from Page_Menu import page_menu
-from Resouce import Profile, Keyboard_Writing
+from Resouce import Profile, Keyboard_Writing, RedPanda
 
 
 def return_to_menu(player):
@@ -77,6 +77,7 @@ def Menu(player_info):
     yes_button = sec_font.render("YES", True, (255, 255, 255))
     # print(question_unavailable.get_width())
     # Group quizzes by chapter
+    panda_spirit = RedPanda()
 
     for i in range(len(quiz)):
         chapter_id = int(quiz[i][4][3:])
@@ -148,6 +149,7 @@ def Menu(player_info):
         screen.fill((50, 50, 50))
         screen.blit(background_scale, (0, 0))
 
+        panda_spirit.draw(screen, (100, 600))
         loc = font.render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
         screen.blit(loc, (1100, 0))
         right = Arrow("right", (588, 710), push=Push_r)

@@ -727,3 +727,67 @@ class Keyboard_Writing:
         self.error = ""
         self.error_label = font(20).render(self.error, True, (199, 0, 0))
         self.x = 0
+
+
+def load_image():
+    with open("Red_Panda_Sprite_Sheet.json", "r") as file:
+        return json.load(file)
+
+
+class RedPanda:
+    def __init__(self):
+        self.panda_rect = None
+        self.status = "Idle"
+        self.prev_status = "Idle2"
+        self.load = load_image()
+        self.frames = []
+        self.current_frame = 0
+        self.last_update_time = pygame.time.get_ticks()
+        self.loop = 6
+        self.frame_duration = 130  # milliseconds per frame
+        self.sprite_sheet = pygame.image.load(resource_path("Assets/Red Panda Sprite Sheet.png"))
+
+    def load_frames(self):
+        self.frames.clear()
+        for i in range(self.loop):  # 6 idle frames
+            frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {i}.ase"]["frame"]
+            self.frames.append(frame_data)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now > 8000:
+            self.set_status("Idle2")
+            if now > 9000:
+                self.set_status("Idle")
+                if now > 10000:
+                    self.loop = 8
+                    self.set_status("Sleep")
+
+        if self.get_status() != self.get_prev_status():
+            self.set_prev_status(self.get_status())
+            self.current_frame = 0
+            self.load_frames()
+
+        if now - self.last_update_time > self.frame_duration:
+            self.last_update_time = now
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+
+    def draw(self, screen, position):
+        self.update()
+        frame = self.frames[self.current_frame]
+        rect = pygame.Rect(frame["x"], frame["y"], frame["w"], frame["h"])
+        image = self.sprite_sheet.subsurface(rect)
+        scaled_image = pygame.transform.scale(image, (120, 120))
+        screen.blit(scaled_image, position)
+
+    def get_status(self):
+        return self.status
+
+    def set_status(self, status):
+        self.status = status
+
+    def get_prev_status(self):
+        return self.prev_status
+
+    def set_prev_status(self, status):
+        self.prev_status = status
