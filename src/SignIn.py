@@ -56,11 +56,11 @@ if getattr(sys, 'frozen', False):
     base_path = sys._MEIPASS  # PyInstaller's temp extraction path
 else:
     base_path = os.path.dirname(__file__)  # Normal script execution path
-forest_image_path = os.path.join(base_path, "assets", "Forest.png")
+forest_image_path = os.path.join(base_path, "assets", "background.gif")
 background = ft.Container(
     # Load the background image
     content=ft.Image(
-        src="assets/background.gif",  # Replace with your image path
+        src=forest_image_path,  # Replace with your image path
         width=1525,
         height=800,
         fit=ft.ImageFit.COVER  # Ensure the image covers the entire space
@@ -80,6 +80,7 @@ def signin_view(page, click):
     return ft.View(
         route="/signin",
         padding=0,
+        bgcolor="#000000",
         controls=[
             ft.Stack(
                 [
