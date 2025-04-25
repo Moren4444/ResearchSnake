@@ -5,6 +5,9 @@ import sys
 
 import pygame
 import random
+
+from PIL import Image
+
 from database import select, update_DB
 from OTP import send_otp_email as otp
 
@@ -740,6 +743,7 @@ class RedPanda:
         self.status = "Idle"
         self.prev_status = "Idle2"
         self.load = load_image()
+        self.start_time = pygame.time.get_ticks()
         self.frames = []
         self.current_frame = 0
         self.last_update_time = pygame.time.get_ticks()
@@ -753,13 +757,14 @@ class RedPanda:
             frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {i}.ase"]["frame"]
             self.frames.append(frame_data)
 
-    def update(self):
+    def _update(self):
         now = pygame.time.get_ticks()
-        if now > 8000:
+        elapsed = now - self.start_time  # ✅ how long since reset
+        if elapsed > 5000:
             self.set_status("Idle2")
-            if now > 9000:
+            if elapsed > 6000:
                 self.set_status("Idle")
-                if now > 10000:
+                if elapsed > 7000:
                     self.loop = 8
                     self.set_status("Sleep")
 
@@ -773,12 +778,20 @@ class RedPanda:
             self.current_frame = (self.current_frame + 1) % len(self.frames)
 
     def draw(self, screen, position):
-        self.update()
+        self._update()
         frame = self.frames[self.current_frame]
         rect = pygame.Rect(frame["x"], frame["y"], frame["w"], frame["h"])
         image = self.sprite_sheet.subsurface(rect)
         scaled_image = pygame.transform.scale(image, (120, 120))
         screen.blit(scaled_image, position)
+
+    def reset(self):
+        self.start_time = pygame.time.get_ticks()
+        self.set_status("Idle")
+        self.set_prev_status("Idle2")  # Force load on next update
+        self.loop = 6
+        self.current_frame = 0
+        self.load_frames()
 
     def get_status(self):
         return self.status
@@ -791,3 +804,31 @@ class RedPanda:
 
     def set_prev_status(self, status):
         self.prev_status = status
+
+
+class Background:
+    def __init__(self, path, size=(1280, 800)):
+        self.gif = Image.open(resource_path(path))
+        self.frames = []
+        self.size = size  # Desired output size
+
+        try:
+            while True:
+                frame = self.gif.copy().convert("RGBA").resize(self.size)
+                pygame_image = pygame.image.fromstring(frame.tobytes(), frame.size, frame.mode)
+                self.frames.append(pygame_image)
+                self.gif.seek(len(self.frames))  # Move to next frame
+        except EOFError:
+            pass
+
+        self.frame_index = 0
+        self.frame_duration = 100
+        self.last_update = pygame.time.get_ticks()
+
+    def play(self, screen):
+        now = pygame.time.get_ticks()
+        if now - self.last_update > self.frame_duration:
+            self.last_update = now
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+
+        screen.blit(self.frames[self.frame_index], (0, 0))

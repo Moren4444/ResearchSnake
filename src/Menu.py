@@ -4,24 +4,13 @@ from Result_2 import wrap_text_word_based
 import sys
 import os
 from Page_Menu import page_menu
-from Resouce import Profile, Keyboard_Writing, RedPanda
+from Resouce import Profile, Keyboard_Writing, RedPanda, Background, resource_path, font
 
 
 def return_to_menu(player):
     print("Return to menu")
     print(player)
     Menu(player)
-
-
-def resource_path(relative_path):
-    """Get the absolute path to a resource, works for dev and for PyInstaller."""
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
 
 
 def Menu(player_info):
@@ -43,18 +32,17 @@ def Menu(player_info):
     list_of_quiz = []
     list_of_levels = []
     player_level = player_info[4]  # Default to 1 if not set
-    font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30)
-    sec_font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 25)
-    background = pygame.image.load(resource_path(f"assets/Background.jpg"))
-    background_scale = pygame.transform.scale(background, (1280, 800))
+    # background = pygame.image.load(resource_path(f"assets/Background.jpg"))
+    # background_scale = pygame.transform.scale(background, (1280, 800))
+    background = Background("assets/Menu.gif")
     pygame.mixer.music.load(resource_path("assets/Student_background_audio.mp3"))
     pygame.mixer.music.play(loops=True)
     chapter_quizzes = {}
     chapter, quiz = Chapter_Quiz()
     all_testing_data = {}
     length_of_quiz = []  # Now stores (length, y_offset) for each CHAPTER (not quiz)
-    description_title = sec_font.render("Description: ", True, (0, 0, 0))
-    play = font.render("Play", True, (0, 0, 0))
+    description_title = font(25).render("Description: ", True, (0, 0, 0))
+    play = font(30).render("Play", True, (0, 0, 0))
     play_button = pygame.Rect(935, 550, 210, 100)
 
     def Arrow(direction, position, color="blue", push=""):
@@ -71,13 +59,14 @@ def Menu(player_info):
     overlay = pygame.Surface((1280, 800), pygame.SRCALPHA)  # Enable per-pixel alpha
     overlay.fill((0, 0, 0, 130))  # RGBA: Black with 100/255 transparency
     overlay_rect = overlay.get_rect(topleft=(0, 0))
-    question_unavailable = sec_font.render("Quiz is not available", True, (255, 255, 255))
-    Quit_Text = sec_font.render("We will miss you!", True, (255, 255, 255))
-    prompt_Text = sec_font.render("Are you sure?", True, (255, 255, 255))
-    yes_button = sec_font.render("YES", True, (255, 255, 255))
+    question_unavailable = font(25).render("Quiz is not available", True, (255, 255, 255))
+    Quit_Text = font(25).render("We will miss you!", True, (255, 255, 255))
+    prompt_Text = font(25).render("Are you sure?", True, (255, 255, 255))
+    yes_button = font(25).render("YES", True, (255, 255, 255))
     # print(question_unavailable.get_width())
     # Group quizzes by chapter
     panda_spirit = RedPanda()
+    panda_spirit.reset()
 
     for i in range(len(quiz)):
         chapter_id = int(quiz[i][4][3:])
@@ -147,13 +136,13 @@ def Menu(player_info):
     confirm_quit = pygame.Rect((screen.get_width() - 280) / 2, (screen.get_height() - 200) / 2, 280, 300)
     while running:
         screen.fill((50, 50, 50))
-        screen.blit(background_scale, (0, 0))
-
-        panda_spirit.draw(screen, (100, 600))
-        loc = font.render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
+        # screen.blit(background_scale, (0, 0))
+        background.play(screen)
+        panda_spirit.draw(screen, (100, 650))
+        loc = font(30).render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
         screen.blit(loc, (1100, 0))
-        right = Arrow("right", (588, 710), push=Push_r)
-        left = Arrow("left", (75, 710), push=Push_l)
+        right = Arrow("right", (588, 572), push=Push_r)
+        left = Arrow("left", (75, 572), push=Push_l)
 
         # Calculate current page indices and arrow visibility
         start_idx = current_page * 3
@@ -175,17 +164,17 @@ def Menu(player_info):
             # Draw chapter background
             num_quizzes = len(quizzes)
             chap_length = (59 * scale) + (25 * (num_quizzes - 1) * scale)
-            rect_surface = pygame.Surface((chap_length, 24 * scale), pygame.SRCALPHA)
-            rect_surface.fill((105, 105, 105, 128))  # color and opacity
-            screen.blit(rect_surface, (40 * scale, 42 * scale + y_offset))
-            # pygame.draw.rect(screen, (105, 105, 105),
-            #                  (40 * scale, 42 * scale + y_offset,
-            #                  chap_length, 24 * scale),
-            #                  border_radius=5)
+            shadow = pygame.Surface((chap_length, 24 * scale), pygame.SRCALPHA)
+            shadow.fill((0, 0, 0, 130))
+            screen.blit(shadow, (37 * scale, 44.5 * scale + y_offset))
+            pygame.draw.rect(screen, (217, 99, 30),
+                             (40 * scale, 42 * scale + y_offset,
+                              chap_length, 24 * scale),
+                             border_radius=5)
 
             # Draw chapter name
-            chapter_name = font.render(f"{'Additional Chapter' if chapter_id > 9 else f'Chapter {chapter_id}'}",
-                                       True, (0, 0, 0))
+            chapter_name = font(30).render(f"{'Additional Chapter' if chapter_id > 9 else f'Chapter {chapter_id}'}",
+                                           True, (0, 0, 0))
             screen.blit(chapter_name, (100, 100 + y_offset))
 
             # Draw quizzes
@@ -205,7 +194,7 @@ def Menu(player_info):
                 list_of_visible_quizzes.append((rect, global_idx))
 
                 pygame.draw.rect(screen, (246, 208, 17), rect, border_radius=5)
-                screen.blit(font.render(str(index + 1), True, (0, 0, 0)), level_pos)
+                screen.blit(font(30).render(str(index + 1), True, (0, 0, 0)), level_pos)
                 # Lock logic
                 if (global_idx + 1) > player_level and chapter_id <= 9:
                     lock_rect = lock_resize.get_rect(center=rect.center)
@@ -307,23 +296,22 @@ def Menu(player_info):
         if menu_open:
             try:
                 level_click = quiz[quiz_level]
-                rect_surface = pygame.Surface((445, 650), pygame.SRCALPHA)
-                rect_surface.fill((105, 105, 105, 128))
-                screen.blit(rect_surface, (800, 50))
+
+                pygame.draw.rect(screen, (254, 204, 146), (800, 50, 445, 650))
                 screen.blit(close_resize, (1200, 55))
                 # Animate the title
                 title = level_click[1][:char_index_title]
-                title_wrapped = wrap_text_word_based(title, 400, font)
+                title_wrapped = wrap_text_word_based(title, 340, pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30))
                 for i, line in enumerate(title_wrapped):
-                    title_surface = font.render(line, True, (0, 0, 0))
+                    title_surface = font(30).render(line, True, (0, 0, 0))
                     screen.blit(title_surface, (850, 100 + i * 40))
 
                 # Animate the description
                 description = level_click[2][:char_index_description]
-                description_wrapped = wrap_text_word_based(description, 400, font)
+                description_wrapped = wrap_text_word_based(description, 340, pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30))
                 screen.blit(description_title, (850, 200))
                 for i, line in enumerate(description_wrapped):
-                    description_surface = font.render(line, True, (0, 0, 0))
+                    description_surface = font(30).render(line, True, (0, 0, 0))
                     screen.blit(description_surface, (850, 250 + i * 40))  # Adjust y-offset for each line
 
                 # Update animation progress

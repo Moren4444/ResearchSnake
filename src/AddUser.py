@@ -109,15 +109,7 @@ def new_user(page: ft.Page, role, audio1, audio2):
                     bgcolor="green"
                 )
             elif role == "Admin":
-                if not add_new_student(username, email, hashed_password, level, registeredDate, lastLogin):
-                    page.snack_bar = ft.SnackBar(
-                        content=ft.Text("Username/Email already exists!", color="white"),
-                        bgcolor="red",
-                        duration=2000,
-                    )
-                    page.open(page.snack_bar)
-                    page.update()
-                else:
+                if add_new_student(username, email, hashed_password, level, registeredDate, lastLogin):
                     page.snack_bar = ft.SnackBar(
                         content=ft.Text("The user is added successfully!", color="white"),
                         bgcolor="green"

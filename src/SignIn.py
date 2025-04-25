@@ -60,8 +60,7 @@ forest_image_path = os.path.join(base_path, "assets", "Forest.png")
 background = ft.Container(
     # Load the background image
     content=ft.Image(
-        src="https://cdnb.artstation.com/p/assets/images/images/037/263/051/"
-            "original/karina-formanova-rainforest-animation.gif?1619929364",  # Replace with your image path
+        src="assets/background.gif",  # Replace with your image path
         width=1525,
         height=800,
         fit=ft.ImageFit.COVER  # Ensure the image covers the entire space

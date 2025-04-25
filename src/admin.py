@@ -79,7 +79,7 @@ class AdminPage:
                     self.hedrNavFdbkBx.margin = ft.margin.only(right=467)
                     self.draftBtnPng.src = getColor(self.draftBtnPng.src)
                 elif e.control.key == "hedrNavUsersBtn":
-                    self.hedrNavFdbk.value = f"Manage Student Account"
+                    self.hedrNavFdbk.value = f"Manage {'Student' if role == 'Admin' else 'Admin'} Account"
                     self.hedrNavFdbkBx.margin = ft.margin.only(right=300)
                     self.userBtnPng.src = getColor(self.userBtnPng.src)
                 elif e.control.key == "hedrNavQuizBtn":

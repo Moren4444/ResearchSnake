@@ -19,6 +19,7 @@ import re
 import hashlib
 import draft_page
 from OTP import send_otp_email as otp
+from Resouce import resource_path
 
 
 def delete_login_credentials():
@@ -132,6 +133,7 @@ def main(page: ft.Page):
         value=load_login_credentials().get("username", ""),
         bgcolor="#343434",
         color="#FFFFFF",
+        label_style=ft.TextStyle(color="#04D9FF"),
         width=156.5 * 3,
         border_radius=8,
         border_color="#FFFFFF",
@@ -142,6 +144,7 @@ def main(page: ft.Page):
         value=load_login_credentials().get("password", ""),
         bgcolor="#343434",
         width=156.5 * 3,
+        label_style=ft.TextStyle(color="#04D9FF"),
         color="#FFFFFF",
         border_radius=8,
         password=True,
@@ -152,7 +155,7 @@ def main(page: ft.Page):
     # Create a container to hold the background image
     background_container = ft.Container(
         content=ft.Image(
-            src="https://cdnb.artstation.com/p/assets/images/images/037/263/051/original/karina-formanova-rainforest-animation.gif?1619929364",  # Replace with your image path
+            src=resource_path("assets/background.gif"),  # Replace with your image path
             width=1525,
             height=800,
             fit=ft.ImageFit.COVER  # Ensure the image covers the entire space
@@ -224,6 +227,7 @@ def main(page: ft.Page):
             input_filter=ft.NumbersOnlyInputFilter(),
             width=300 * 3,
             color="#FFFFFF",
+            label_style=ft.TextStyle(color="#04D9FF"),
             border_radius=8,
             on_change=lambda e: update_button(e)
         )
@@ -250,7 +254,8 @@ def main(page: ft.Page):
                 ],
                 height=160,
                 width=300
-            )
+            ),
+            bgcolor="#544f4e"
         )
 
         def send_otp(e=None):
@@ -274,6 +279,7 @@ def main(page: ft.Page):
             label="Gmail",
             suffix_text="@gmail.com",
             width=300 * 3,
+            label_style=ft.TextStyle(color="#04D9FF"),
             color="#FFFFFF",
             border_radius=8,
             on_change=update_button_state  # Trigger check on input change
@@ -295,7 +301,8 @@ def main(page: ft.Page):
                 alignment=ft.MainAxisAlignment.START,
                 width=300,
                 height=120
-            )
+            ),
+            bgcolor="#544f4e"
         )
 
         def on_proceed(e):
@@ -339,11 +346,13 @@ def main(page: ft.Page):
                     password = ft.TextField(
                         width=300,
                         label="New Password",
+                        label_style=ft.TextStyle(color="#04D9FF"),
                         password=True
                     )
                     confirm_password = ft.TextField(
                         width=300,
                         label="Confirm Password",
+                        label_style=ft.TextStyle(color="#04D9FF"),
                         password=True
                     )
 
@@ -366,7 +375,7 @@ def main(page: ft.Page):
                         [update_DB(f"UPDATE [{i}] SET [Password] = '{pass_value}' WHERE Email = "
                                    f"'{email.value}@gmail.com'") for i in ['Student', 'Admin', 'Owner']]
 
-                        page.dialog = ft.AlertDialog(title=ft.Text("Password Changed"))
+                        page.dialog = ft.AlertDialog(title=ft.Text("Password Changed"), bgcolor="#544f4e")
                         page.close(change_dialog)
                         page.open(page.dialog)
                         page.update()
@@ -386,7 +395,8 @@ def main(page: ft.Page):
                             ],
                             width=330,
                             height=200
-                        )
+                        ),
+                        bgcolor = "#544f4e"
                     )
 
                     page.dialog = change_dialog

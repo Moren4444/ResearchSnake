@@ -33,6 +33,7 @@ def draft_page(page: ft.Page, audio1, audio2):
         value=f"Chapter {sorted_chapter[0]}",
         border_radius=5,
         bgcolor="#000000",
+        color="#FFFFFF",
         width=200,
         border_color="#FFFFFF",
         options=[ft.dropdown.Option(f"Chapter {i}") for i in sorted(chapter_quizQ)]
@@ -42,6 +43,7 @@ def draft_page(page: ft.Page, audio1, audio2):
         value=f"Quiz {sorted_Quiz[0]}",
         border_radius=5,
         bgcolor="#000000",
+        color="#FFFFFF",
         width=200,
         border_color="#FFFFFF",
         options=[ft.dropdown.Option(f"Quiz {i}") for i in quiz]
@@ -214,7 +216,8 @@ def draft_page(page: ft.Page, audio1, audio2):
             correct_answer = chr(65 + correct_index)  # Convert to A-D
             quiz_ID = chapter_quizQ[selected_chapter][selected_quiz][str(question_id)][-1]
             print(quiz_ID)
-            check = select(f"Select Question from Question where QuizID = 'QIZ{int(quiz_ID)}' and QuestionID != '{question_id}'")
+            check = select(f"Select Question from Question where QuizID = 'QIZ{int(quiz_ID):02d}' and "
+                           f"QuestionID != '{question_id}'")
             print(check, question_id)
             if Current_question in [i[0] for i in check]:
                 page.open(
@@ -310,7 +313,7 @@ def draft_page(page: ft.Page, audio1, audio2):
     def dropdown_change(e):
         nonlocal selected_chapter, selected_quiz, quiz, sorted_chapter
 
-        selected_chapter = chapter_dd.value.split()[-1]
+        selected_chapter = str(chapter_dd.value.split()[-1])
         sorted_chapter = [int(i) for i in sorted(chapter_quizQ)]
         temp = quiz
         quiz = sorted([int(i) for i in chapter_quizQ[str(sorted_chapter[sorted_chapter.index(int(selected_chapter))])]])
@@ -320,7 +323,7 @@ def draft_page(page: ft.Page, audio1, audio2):
         page.update()
         quiz_dd.options = [ft.dropdown.Option(f"Quiz {i}") for i in quiz]
 
-        selected_quiz = quiz_dd.value.split()[-1]
+        selected_quiz = str(quiz_dd.value.split()[-1])
         update_column()
 
     chapter_dd.on_change = dropdown_change

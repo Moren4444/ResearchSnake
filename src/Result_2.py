@@ -102,7 +102,9 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
         show_left = current_page > 0
         show_right = current_page < total_pages - 1
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
