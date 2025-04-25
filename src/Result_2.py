@@ -65,7 +65,7 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
     proceed_text = sec_font.render("PROCEED", True, (255, 255, 255))
     scale = 2
-    proceed_button = pygame.Rect(427.15 * scale, 247 * scale, 99 * scale, 38 * scale)
+    proceed_button = pygame.Rect(1039, 658, 99 * scale, 38 * scale)
 
     list_of_answer = []
     for index, i in enumerate(Retrieve_Question(chapter_info[0][3:], "CorrectAnswer")):
@@ -92,6 +92,7 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
     Push_l = ""
     while running:
         screen.fill((52, 52, 52))
+        mouse_pos = pygame.mouse.get_pos()  # Get mouse position
         right = Arrow("right", (588, 710), push=Push_r)
         left = Arrow("left", (75, 710), push=Push_l)
 
@@ -101,7 +102,9 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
         show_left = current_page > 0
         show_right = current_page < total_pages - 1
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -120,7 +123,9 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                     Push_r = ""
                 elif left[1].collidepoint(event.pos):
                     Push_l = ""
-        pygame.draw.rect(screen, (39, 70, 68), (100, 40, 526, 698), border_radius=7)
+        loc = font.render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
+        screen.blit(loc, (1100, 0))
+        pygame.draw.rect(screen, (39, 70, 68), (100, 40, 873, 698), border_radius=7)
         for i in range(start_idx, end_idx):
             position_in_page = i - start_idx
 
@@ -134,9 +139,9 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                 char_index_answer[i] += 1
                 display_answer[i] = list_of_answer[i][:char_index_answer[i]]
 
-            wrapped_lines = wrap_text_word_based(displayed_text[i], 370, font)
-            base_y_offset = 70
-            answer_wrap = wrap_text_word_based(display_answer[i], 370, font)
+            wrapped_lines = wrap_text_word_based(displayed_text[i], 770, font)
+            base_y_offset = 100
+            answer_wrap = wrap_text_word_based(display_answer[i], 770, font)
 
             # Render the question
             for j, line in enumerate(wrapped_lines):
@@ -166,10 +171,11 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
             if show_left:
                 screen.blit(left[0], (75, 710))
 
-        screen.blit(Streak, (960, 246))
-        pygame.draw.rect(screen, (24, 33, 199), (427.15 * scale, 247 * scale, 99 * scale, 38 * scale)
+        screen.blit(Streak, (1056, 328))
+        pygame.draw.rect(screen, (24, 33, 199), (1039, 658, 99 * scale, 38 * scale)
                          , border_radius=8)
-        screen.blit(proceed_text, (444 * scale, 260 * scale))
+        screen.blit(proceed_text, (1039 + (99 * scale - proceed_text.get_width())/2,
+                                   658 + (38 * scale - proceed_text.get_height())/2))
         pygame.display.update()
         time.sleep(0.02)
         clock.tick(60)

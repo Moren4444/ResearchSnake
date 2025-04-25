@@ -7,6 +7,9 @@ from admin import AdminPage
 
 
 def profile_management(page: ft.Page, role, audio1, audio2):
+    page.scroll = "auto"
+    page.vertical_alignment = "stretch"
+    page.horizontal_alignment = "stretch"
     user_id = page.session.get("user_id")
 
     # Retrieve user information from the database
@@ -17,7 +20,7 @@ def profile_management(page: ft.Page, role, audio1, audio2):
         reg_date = str(user_info.RegisteredDate)
         lastLogin_date = user_info.LastLogin
     elif role == "Owner":
-        user_info = select_user(int(user_id[2:]), "Owner")
+        user_info = select_user(int(user_id[1:]), "Owner")
         print(" Owner", user_id)
         print(user_info)
         username = user_info.Name
@@ -96,6 +99,7 @@ def profile_management(page: ft.Page, role, audio1, audio2):
         border_color="white",
         label_style=ft.TextStyle(color="white"),
     )
+
     draft = ft.TextButton("Draft", style=ft.ButtonStyle(color="white"),
                           on_click=lambda e: page.go("/draft_page"))
     if not os.path.exists("Quiz_draft2.json"):
@@ -105,24 +109,34 @@ def profile_management(page: ft.Page, role, audio1, audio2):
         route="/profile_management",
         padding=20,
         bgcolor="#343434",
-        controls=
-        [
+        controls=[
             Admin.page.appbar,
             Hedr,
             ft.Container(
-                content=ft.Column(
-                    [
-                        username_field,
-                        email_field,
-                        reg_date_field,
-                        lastLogin_field,
-                    ],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    spacing=20,
+                expand=True,
+                image_fit=ft.ImageFit.COVER,
+                content=ft.Container(
+                    expand=True,
+                    content=ft.Column(
+                        [
+                            ft.Container(
+                                content=ft.Column(
+                                    [
+                                        username_field,
+                                        email_field,
+                                        reg_date_field,
+                                        lastLogin_field,
+                                    ],
+                                    alignment=ft.MainAxisAlignment.CENTER,
+                                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    spacing=20,
+                                ),
+                                alignment=ft.alignment.center,
+                                expand=True,
+                            ),
+                        ]
+                    ),
                 ),
-                alignment=ft.alignment.center,  # Center the container content
-                expand=True,  # Make the container fill the available space
             ),
         ],
     )

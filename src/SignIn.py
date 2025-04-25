@@ -17,7 +17,7 @@ def hash_password(password: str) -> str:
 
 username = ft.TextField(
     label="Username",
-    bgcolor="#000000",
+    bgcolor="#343434",
     width=156.5 * 3,
     color="#FFFFFF",
     border_radius=8,
@@ -25,7 +25,7 @@ username = ft.TextField(
 )
 email = ft.TextField(
     label="Email",
-    bgcolor="#000000",
+    bgcolor="#343434",
     width=156.5 * 3,
     color="#FFFFFF",
     border_radius=8,
@@ -34,7 +34,7 @@ email = ft.TextField(
 )
 password = ft.TextField(
     label="Password",
-    bgcolor="#000000",
+    bgcolor="#343434",
     width=156.5 * 3,
     color="#FFFFFF",
     border_radius=8,
@@ -44,7 +44,7 @@ password = ft.TextField(
 
 confirm = ft.TextField(
     label="Confirm password",
-    bgcolor="#000000",
+    bgcolor="#343434",
     width=156.5 * 3,
     color="#FFFFFF",
     border_radius=8,
@@ -60,7 +60,7 @@ forest_image_path = os.path.join(base_path, "assets", "Forest.png")
 background = ft.Container(
     # Load the background image
     content=ft.Image(
-        src=forest_image_path,  # Replace with your image path
+        src="assets/background.gif",  # Replace with your image path
         width=1525,
         height=800,
         fit=ft.ImageFit.COVER  # Ensure the image covers the entire space
@@ -127,14 +127,16 @@ def signin_view(page, click):
                                                 on_click=lambda e: [click(e), submit(e, page)]
                                             ),
                                             ft.TextButton(
-                                                content=ft.Text("Login", color="white", size=25),
+                                                content=ft.Text("Login", color="#05432c", size=25),
                                                 on_click=lambda e: [click(e), page.go("/")]
                                             )
                                         ],
                                         spacing=10,
                                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                                     ),
-                                    alignment=ft.alignment.center,  # Center the login form
+                                    bgcolor=ft.Colors.with_opacity(0.5, "#909596"),
+                                    padding=20,
+                                    border_radius=10,
                                 )
                             ],
                             alignment=ft.MainAxisAlignment.CENTER,  # Center the entire column vertically
@@ -196,7 +198,7 @@ def submit(e, page):
         return
 
     last_user_id = get_last_user_Id()  # Implement this function in the database module
-    new_id = "S" + str(int(last_user_id) + 1).zfill(4) if last_user_id else "S0001"
+    new_id = "S" + str(int(last_user_id[1:]) + 1).zfill(4) if last_user_id else "S0001"
 
     hashed_password = hash_password(user_input[1])  # Hash the password before storing
 

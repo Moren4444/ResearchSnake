@@ -23,12 +23,12 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     def load_login_credentials():
         """Load credentials from the JSON file."""
         if os.path.exists("Quiz_draft2.json"):
-            print("HAII")
             with open("Quiz_draft2.json", "r") as file:
                 return json.load(file)
         else:
             return {}
 
+    question_saved = load_login_credentials()
     # Populate chapter_quizzes dictionary
     for i in range(len(quiz)):
         chapter_id = int(quiz[i][4][3:])
@@ -116,8 +116,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             bgcolor=ft.colors.RED
         ) for i in range(4)
     ]
-    print(current_q_index)
-    print(Retrieve_Question(1, "Question"))
     question_title.value = Retrieve_Question(1, "Question")[current_q_index]
     answer = Retrieve_Question(1, "CorrectAnswer")[current_q_index]
     options = Retrieve_Question(1, "Option1, Option2, Option3, Option4")[current_q_index]
@@ -130,21 +128,19 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     lvl_req = chapter_quizzes[selected_chapter_index][-1][3]
 
     def add_question(e):
-        print("Quiz ID: ", selected_index)
+
         Add_Question(selected_index, admin_Name)
         update_column(selected_index)
-        print("What is this? ", selected_index, selected_chapter_index)
-        print(questions)
         question_title.value = questions[0]
         options = ["Option 1", "Option 2", "Option 3", "Option 4"]
         answer = "A"
-        print("Look what this is: ", options, answer)
+
         for i in range(4):
-            print(options[i])
             option_fields[i].value = options[i]
             option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
             option_fields[i].disabled = False
         question_title.disabled = False
+        save_button.disabled = False
         quiz_name.disabled = False
         description.disabled = False
 
@@ -173,7 +169,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         question_database = Retrieve_Question(selected_index, "Question")[current_q_index]
         check = questions
         check.pop(current_q_index)
-        print("Check: ", check)
         index = 0
         for i in chapter_quizzes[selected_chapter_index]:
             if int(i[0][3:]) == selected_index:
@@ -209,6 +204,14 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
                     questions.clear()
                     update_column(selected_index)
                     page.update()
+                else:
+                    dlg = ft.AlertDialog(
+                        title=ft.Text("Duplicated questions detected"),
+                        on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
+                    )
+                    page.open(dlg)
+                    questions.append(current_question)
+                    check = questions
             index += 1
 
         # Load the pending question if there is one
@@ -267,13 +270,14 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         # return {"username": "", "password": ""}  # Return empty values if file doesn't exist
         return {}
 
+    question_id = select(f"Select * from Question where QuizID = '{f'QIZ{selected_index:02d}'}'")[current_q_index][0]
+
     def Json_save(e):
-        nonlocal unsaved_changes
+        nonlocal unsaved_changes, question_saved
         unsaved_changes = False
 
         # Ensure JSON structure exists
         chapter_key = str(selected_chapter_index)
-        question_id = select(f"Select * from Question where QuizID = '{f'QIZ{selected_index:02d}'}'")[current_q_index][0]
 
         if not os.path.exists("Quiz_draft2.json"):
             question_saved = {}
@@ -297,7 +301,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             option_fields[1].value,
             option_fields[2].value,
             option_fields[3].value,
-            f"{selected_index+1:02d}"
+            f"{selected_index:02d}"
         ]
         # Add question data
         question_saved[chapter_key][section_key][question_id] = data
@@ -306,7 +310,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             json.dump(question_saved, file, indent=4)
 
         json_record = ft.SnackBar(
-            ft.Text("Record has been saved in the JSON file!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
+            ft.Text("Record has been saved in draft!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
             bgcolor="#242323",
             duration=1500
         )
@@ -379,6 +383,9 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     # Function to handle question deletion
     def delete_question(question):
         # Confirm deletion with a dialog
+        nonlocal current_q_index
+        current_q_index = questions.index(question)
+        quiz_id = selected_index
         confirm_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Confirm Delete"),
@@ -396,11 +403,18 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         if selected_chapter_index == 1 and selected_index == 0 and len(questions) == 1:
             page.open(dlg)
             return
-        print("Find: ", len(chapter_quizzes[selected_chapter_index]), len(questions))
+
         if len(chapter_quizzes[selected_chapter_index]) == 1 and len(questions) == 1:
             page.open(dlg)
             return
 
+        original_question = Retrieve_Question(quiz_id, "Question")[current_q_index]
+        original_options = Retrieve_Question(quiz_id, "Option1, Option2, Option3, Option4")[current_q_index]
+        original_answer = Retrieve_Question(quiz_id, "CorrectAnswer")[current_q_index]
+        question_title.value = original_question
+        for i in range(4):
+            option_fields[i].value = original_options[i]
+            option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(original_answer) - ord('A')) else ft.colors.RED
         # Open the confirmation dialog
         page.dialog = confirm_dialog
         page.open(page.dialog)
@@ -409,22 +423,27 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     # Function to confirm deletion
     def confirm_delete(question):
         # Perform the deletion logic here
+        nonlocal question_id
+        question_id = select(f"Select * from Question where QuizID = '{f'QIZ{selected_index:02d}'}'")[current_q_index][
+            0]
         quiz_id = selected_index
-        question_index = questions.index(question) + 1
         # Call a function to delete the question from the database
-        Delete_Question(quiz_id, question)  # You need to implement this function in your database module
+        Delete_Question(quiz_id, question_id, [str(selected_chapter_index), dd.value.split()[
+            -1]])  # You need to implement this function in your database module
 
         # Close the dialog
         close_delete_dialog(None)
 
         # Refresh the questions list
         update_column(selected_index)
-        if not questions or current_q_index == len(questions):
-            question_title.disabled = True
-            quiz_name.disabled = True
-            description.disabled = True
-            for i in range(4):
-                option_fields[i].disabled = True
+        # if not questions or current_q_index == len(questions):
+
+        question_title.disabled = True
+        save_button.disabled = True
+        quiz_name.disabled = True
+        description.disabled = True
+        for i in range(4):
+            option_fields[i].disabled = True
         page.update()
 
     # Function to close the delete confirmation dialog
@@ -466,8 +485,10 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
 
     # Function to update right panel with question details
     def update_question_details(question):
-        nonlocal current_q_index, original_data
+        nonlocal current_q_index, original_data, question_id
         current_q_index = questions.index(question)
+        question_id = select(f"Select * from Question where QuizID = '{f'QIZ{selected_index:02d}'}'")[current_q_index][
+            0]
         # Get original data from database
         quiz_id = selected_index
         original_question = Retrieve_Question(quiz_id, "Question")[current_q_index]
@@ -484,6 +505,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         # Update UI fields
         question_title.value = original_question
         question_title.disabled = False
+        save_button.disabled = False
         quiz_name.disabled = False
         description.disabled = False
         for i in range(4):
@@ -499,16 +521,14 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
 
     # Dropdown change handler
     def dropdown_changed(e):
-        nonlocal selected_index, selected_chapter_index, current_q_index
-        selected_chapter_index = 10 if int(chapter_dd.value[-1]) == 0 else int(chapter_dd.value[-1])
+        nonlocal selected_index, selected_chapter_index, current_q_index, question_id
+        selected_chapter_index = int(chapter_dd.value.split()[-1])
         options_list.clear()
         for i in range(len(chapter_quizzes[selected_chapter_index])):
             options_list.append(f"Quiz {i + 1}")
         if dd.value not in options_list:
             dd.value = "Quiz 1"
-        print(options_list)
         selected_index = int(dd.value.split()[-1])
-        print("DropDown: ", selected_index)
         if selected_chapter_index == 10:
             pb.visible = True
             top_row.spacing = 16
@@ -517,16 +537,12 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             top_row.spacing = 68
         current_q_index = 0
 
-        print("Selected Chapter Index: ", selected_chapter_index)
-        print(chapter_quizzes)
         for i in chapter_quizzes[selected_chapter_index]:
-            print(int(i[3]) == selected_index, int(i[4][3:]) == selected_chapter_index)
             if int(i[3]) == selected_index and int(i[4][3:]) == selected_chapter_index:
                 quiz_name.value = i[1]
                 description.value = i[2]
                 selected_index = int(i[0][3:])
                 break  # Exit after finding the first match
-        print("In dropdown: ", selected_index)
         dd.options = [ft.dropdown.Option(opt) for opt in options_list]
         update_column(selected_index)
         if questions:
@@ -538,15 +554,21 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
                 option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
                 option_fields[i].disabled = False
             question_title.disabled = False
+            save_button.disabled = False
             quiz_name.disabled = False
             description.disabled = False
         else:
             question_title.disabled = True
             quiz_name.disabled = True
+            save_button.disabled = True
             description.disabled = True
             for i in range(4):
                 option_fields[i].disabled = True
-
+        try:
+            question_id = \
+                select(f"Select * from Question where QuizID = '{f'QIZ{selected_index:02d}'}'")[current_q_index][0]
+        except IndexError:
+            pass
         page.update()
 
     dd.on_change = dropdown_changed
@@ -573,7 +595,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
 
     def Add_Quiz(e):
         lvl = len(chapter_quizzes[selected_chapter_index]) + 1
-        print(f"CHA{selected_chapter_index:02d}")
         get_id = Add_QuizLVL(lvl, f"CHA{selected_chapter_index:02d}")
         new_quiz = (f"QIZ{get_id:02d}", "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
         chapter_quizzes[selected_chapter_index].append(new_quiz)
@@ -586,11 +607,9 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         dd.update()
 
     def confirm_delete_quiz(e):
-        Delete_All(len(chapter_quizzes[selected_chapter_index]))
-        Delete_QuizLVL(len(chapter_quizzes[selected_chapter_index]))
+        Delete_All(chapter_quizzes[selected_chapter_index][-1][0][3:])
 
-        page.open(delete_snack)
-
+        Delete_QuizLVL(chapter_quizzes[selected_chapter_index][-1][0][3:])
         chapter_quizzes[selected_chapter_index].pop(-1)
         options_list.clear()
         for i in range(len(chapter_quizzes[selected_chapter_index])):
@@ -598,15 +617,39 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         dd.options = [ft.dropdown.Option(opt) for opt in options_list]
         dd.value = "Quiz 1"
         dd.update()
-        page.close(delete_quiz)
-
-        print(selected_index)
-        print(questions)
-        print(chapter_quizzes[selected_chapter_index][0][0])
-        update_column(int(chapter_quizzes[selected_chapter_index][0][0][3:]) - 1)
+        try:
+            if len(question_saved[str(selected_chapter_index)]) == 1:
+                os.remove("Quiz_draft2.json")
+            else:
+                question_saved[str(selected_chapter_index)].popitem()
+                with open("Quiz_draft2.json", "w") as file:
+                    json.dump(question_saved, file)
+        except Exception as e:
+            print(e)
+        update_column(int(chapter_quizzes[selected_chapter_index][0][0][3:]))
 
     def Delete_Quiz(e):
-        nonlocal Quiz_name, lvl_req
+        nonlocal Quiz_name, lvl_req, selected_chapter_index
+        print("Chapter Index: ", selected_chapter_index)
+        print(chapter_quizzes[selected_chapter_index])
+        Quiz_name = chapter_quizzes[selected_chapter_index][-1][1]
+        lvl_req = chapter_quizzes[selected_chapter_index][-1][3]
+        delete_snack = ft.SnackBar(
+            ft.Text(f"'{Quiz_name}' in Quiz {lvl_req} is deleted!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
+            bgcolor="#242323",
+            duration=1500
+        )
+        delete_quiz = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Confirm Delete"),
+            content=ft.Text(f"There's questions inside Quiz {lvl_req}, are you sure you wanna delete?"),
+            actions=[
+                ft.TextButton("Yes", on_click=lambda e: [confirm_delete_quiz(e), page.open(delete_snack),
+                                                         page.close(delete_quiz)]),
+                ft.TextButton("No", on_click=lambda e: page.close(delete_quiz)),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
         if len(chapter_quizzes[selected_chapter_index]) == 1:
             dlg = ft.AlertDialog(
                 title=ft.Text("Minimum 1 quiz!"),
@@ -614,7 +657,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             )
             page.open(dlg)
         else:
-            if Delete_QuizLVL(len(chapter_quizzes[selected_chapter_index])):
+            if Delete_QuizLVL(chapter_quizzes[selected_chapter_index][-1][0][3:]):
                 page.open(delete_quiz)
             else:
                 chapter_quizzes[selected_chapter_index].pop(-1)
@@ -626,37 +669,32 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
                 dd.value = "Quiz 1"
                 quiz_name.value = chapter_quizzes[selected_chapter_index][0][1]
                 description.value = chapter_quizzes[selected_chapter_index][0][2]
-                update_column(int(chapter_quizzes[selected_chapter_index][0][0][3:]) - 1)
+                print("TesT: ", int(chapter_quizzes[selected_chapter_index][0][0][3:]))
+                print(chapter_quizzes[selected_chapter_index][0])
+                update_column(int(chapter_quizzes[selected_chapter_index][0][0][3:]))
                 dd.update()
-                print(questions)
                 question_title.value = questions[0]
                 options = Retrieve_Question(selected_index + 1, "Option1, Option2, Option3, Option4")[0]
                 answer = Retrieve_Question(selected_index + 1, "CorrectAnswer")[0]
                 question_title.disabled = False
+                save_button.disabled = False
+                quiz_name.disabled = False
+                description.disabled = False
                 for i in range(4):
                     option_fields[i].value = options[i]
                     option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
                     option_fields[i].disabled = False
                 page.update()
-
+                try:
+                    if len(question_saved[str(selected_chapter_index)]) == 1:
+                        os.remove("Quiz_draft2.json")
+                    else:
+                        question_saved[str(selected_chapter_index)].popitem()
+                        with open("Quiz_draft2.json", "w") as file:
+                            json.dump(question_saved, file)
+                except Exception as e:
+                    print(e)
                 page.open(delete_snack)
-
-    delete_snack = ft.SnackBar(
-        ft.Text(f"'{Quiz_name}' in Quiz {lvl_req} is deleted!", color="#FFFFFF", weight=ft.FontWeight.BOLD),
-        bgcolor="#242323",
-        duration=1500
-    )
-
-    delete_quiz = ft.AlertDialog(
-        modal=True,
-        title=ft.Text("Confirm Delete"),
-        content=ft.Text(f"There's questions inside Quiz {lvl_req}, are you sure you wanna delete?"),
-        actions=[
-            ft.TextButton("Yes", on_click=lambda e: confirm_delete_quiz(e)),
-            ft.TextButton("No", on_click=lambda e: page.close(delete_quiz)),
-        ],
-        actions_alignment=ft.MainAxisAlignment.END,
-    )
 
     pb = ft.PopupMenuButton(
         items=[
@@ -729,7 +767,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     )
 
     def add_chapter(e):
-        print("Selected Index: ", selected_index)
         if len(chapter_quizzes) >= 9:
             exceed_alert = ft.AlertDialog(
                 title=ft.Text("Exceeded 9 Chapter"),
@@ -750,7 +787,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
 
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
-        print("QUiz ID: ", chapter_quizzes[len(chapter_quizzes)][0][0], admin_Name)
         Add_Question(chapter_quizzes[len(chapter_quizzes)][0][0][3:], admin_Name)
         page.open(chapter_snack)
 
@@ -759,22 +795,26 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
 
     def confirm_delete_chapter(e):
         nonlocal selected_index, selected_chapter_index
-        print(chapter_quizzes[len(chapter_quizzes)])
         if len(chapter_quizzes) == 1:
-            print("Delete is not ")
             return
         list_quiz_chapter = []
         for i in chapter_quizzes[len(chapter_quizzes)]:
             list_quiz_chapter.append(int(i[0][3:]))
-        print(list_quiz_chapter)
         Delete_Chapter(len(chapter_quizzes), list_quiz_chapter)
         chapter_quizzes.popitem()
+        if bool(question_saved):
+            if len(question_saved) == 1:
+                os.remove("Quiz_draft2.json")
+            else:
+                question_saved.popitem()
+                with open("Quiz_draft2.json", "w") as file:
+                    json.dump(question_saved, file)
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         if chapter_dd.value == f"Chapter {len(chapter_quizzes) + 1}":
             chapter_dd.value = "Chapter 1"
             quiz_name.value = chapter_quizzes[1][0][1]
             description.value = chapter_quizzes[1][0][2]
-            update_column(int(chapter_quizzes[1][0][0][3:]) - 1)
+            update_column(int(chapter_quizzes[1][0][0][3:]))
             question_title.value = Retrieve_Question(1, "Question")[0]
             options = Retrieve_Question(1, "Option1, Option2, Option3, Option4")[0]
             answer = Retrieve_Question(selected_index + 1, "CorrectAnswer")[0]
@@ -813,11 +853,12 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         pb.visible = False
         top_row.spacing = 68
         chap_id = Add_ChapterDB()
-        quiz_id = Add_QuizLVL(1, chap_id) + 1
-        chapter_quizzes[chap_id] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
+        quiz_id = Add_QuizLVL(1, chap_id)
+        chapter_quizzes[int(chap_id[3:])] = [(f"QIZ{quiz_id:02d}", "Quiz Name", "Description", 1, chap_id)]
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
-        Add_Question(chapter_quizzes[len(chapter_quizzes)][0][0], admin_Name)
+        print(chapter_quizzes)
+        Add_Question(chapter_quizzes[len(chapter_quizzes)][0][0][3:], admin_Name)
         page.update()
 
     chapter_dd.on_change = dropdown_changed

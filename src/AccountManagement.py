@@ -25,8 +25,8 @@ def account_management(page: ft.Page, role, audio1, audio2):
 
         def confirm_delete(e):
             nonlocal users, role
-            target = "Student" if role == "Admin" else "Admin"
-            delete_user(user_id, target)
+            # target = "Student" if role == "Admin" else "Admin"
+            delete_user(user_id, role)
             users = admin_profile_info() if role == "Owner" else stu_profile_info()
             table.rows = create_rows()
             page.snack_bar = ft.SnackBar(

@@ -318,7 +318,7 @@ class Game:
         for line in state['lines']:
             text_surf = font.render(line, True, (0, 0, 0))
             self.screen.blit(text_surf, (x + space_between, current_y + space_between))
-            current_y += text_surf.get_height() + space_between
+            current_y += text_surf.get_height() + 2
 
         # Draw the current line (including the word in progress)
         current_text = state['current_line'] + (

@@ -17,6 +17,8 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     # difficulties = int(os.getenv("DIFFICULTIES", 8))
 
     settings = pygame.image.load(resource_path("assets/settings.png"))
+    pygame.mixer.music.load(resource_path("assets/Gameplay_audio.mp3"))
+    pygame.mixer.music.play(loops=True)
     settings_size = pygame.transform.scale(settings, (128, 128))
     settings_rect = settings_size.get_rect(topleft=(1150, 13))
     user_answer = []
@@ -38,7 +40,6 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     button_c_x, button_c_y = coordinate[2]["x"], coordinate[2]["y"]
     button_d_x, button_d_y = coordinate[3]["x"], coordinate[3]["y"]
     font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 20)
-    test = font.render("Hello, This is me, a person!", True, (30, 30, 30))
 
     Resume = pygame.image.load(resource_path("assets/Large_Buttons/Resume Button.png"))
     Resume_s = pygame.transform.scale(Resume, (Resume.get_width() / 3, Resume.get_height() / 3))
@@ -83,7 +84,6 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
         while running:
             screen.fill((50, 50, 50))
             text = font.render(f"{questions + 1}", True, (255, 255, 255))
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -116,6 +116,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                 game_over = False
                                 questions = 0
                                 player_proceed = False
+                                death_sound_played = False
                                 hit = False
                                 user_answer.clear()
                                 print("Restart")
@@ -127,11 +128,12 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                 print(f"checking: {quiz_level}, {player_info[4]}")
                                 print(player_info[0])
                                 # Update the player's level in the database
-                                if quiz_level >= int(player_info[4]):
+                                if quiz_level >= int(player_info[4]) and int(chapter_info[-2][3:]) != 10:
                                     update("[Student]", "[Level]", int(player_info[4]) + 1,
                                            player_info[0], "Student")
                                 resultDB(player_info[0], quiz_level, chapter_info, user_answer, difficulties, set_time)
                                 result(chapter_info, user_answer, resource_path, return_menu, player_info[0])
+                                pygame.mixer.music.stop()
                             except Exception as e:
                                 print("Error: ", e)
                             # running = False
@@ -148,10 +150,11 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             game.resume()
                         elif Menu_rect.collidepoint(event.pos):
                             print("Menu")
+                            pygame.mixer.music.stop()
                             # Menu(player_info)
                             # return_menu(True, player_info, return_menu)
-                            return_menu(player_info)
                             running = False
+                            return_menu(player_info)
                         elif Restart_rect.collidepoint(event.pos):
                             try:
                                 body_count = 3
@@ -218,6 +221,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                         if not death_sound_played:
                             game.snake.death_sound.play()
                             death_sound_played = True  # ✅ Prevent future replays
+
                         [user_answer.append(False) for i in range(len(answer) - len(user_answer))]
                     else:
                         hit = option.check_collision(position)  # Check for collisions with buttons
@@ -253,7 +257,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
 
                     if Question_title:
                         game._animated_text(Option_title[questions][0],
-                                            font, 125, 353, 5, 422)
+                                            font, 125, 353, 0, 422)
                         game._animated_text(Option_title[questions][1],
                                             font, 125, 444, 5, 422)
                         game._animated_text(Option_title[questions][2],

@@ -1,3 +1,5 @@
+import os
+
 import pyodbc
 # import os
 # Connection string for SQL Server
@@ -18,6 +20,12 @@ connection_string = (
 # print(pyodbc.drivers())  # List available ODBC drivers
 conn = pyodbc.connect(connection_string)
 cursor = conn.cursor()
+
+if os.path.exists("Quiz_draft2.json"):
+    with open("Quiz_draft2.json") as file:
+        chapter_quizQ = json.load(file)
+else:
+    chapter_quizQ = {}
 
 
 def generate_quiz_id(selected_id):
@@ -260,7 +268,7 @@ def Retrieve_Question(ids, column="*"):
 
     num_column = len(column.split(", "))
     with pyodbc.connect(connection_string):
-        query = f"SELECT {column} from Question Where QuizID = ?"
+        query = f"SELECT {column} from Question Where QuizID = ? and IsDeleted = 0"
         cursor.execute(query, (generate_quiz_id(quiz_id),))
         if num_column > 1:
             for i in cursor.fetchall():
@@ -283,9 +291,11 @@ def update(table, column, new_value, id, role):
 
 
 def Chapter_Quiz():
-    cursor.execute("Select ChapterID from Chapter")
+    cursor.execute("select * from chapter where IsDeleted = 0 order by cast(SUBSTRING(ChapterID, 4, len(ChapterID) "
+                   "-2) as int)")
     chapter = cursor.fetchall()
-    cursor.execute("Select * from Quiz order by ChapterID, LevelRequired")
+    cursor.execute("select * from Quiz where IsDeleted = 0 order by cast(SUBSTRING(ChapterID, 4, len(ChapterID) -2) "
+                   "as int), LevelRequired")
     quiz = cursor.fetchall()
     return len(chapter), quiz
 
@@ -308,7 +318,7 @@ def Update_Question(quiz_id, old_question, new_question, new_options, correct_an
 
 def Add_Question(selected_id, admin_name):
     query_id = "SELECT MAX(CAST(SUBSTRING(QuestionID, 2, LEN(QuestionID)) AS INT)) FROM Question"
-    query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    query = "Insert into Question values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     cursor.execute(query_id)
     id_exe = cursor.fetchone()[0]
     print("ADD: ", id_exe)
@@ -318,52 +328,85 @@ def Add_Question(selected_id, admin_name):
     print(generate_quiz_id(selected_id))
     print("Admin Name: ", admin_name)
     cursor.execute(query, generate_question_id(new_ID + 1), f"Question {new_ID + 1}", "A", "Option 1", "Option 2"
-                   , "Option 3", "Option 4", generate_quiz_id(selected_id), admin_name)
+                   , "Option 3", "Option 4", generate_quiz_id(selected_id), admin_name, 0)
     cursor.commit()
 
 
 def Add_QuizLVL(lvl, chapter):
     query_id = "SELECT MAX(CAST(SUBSTRING(QuizID, 4, LEN(QuizID)) AS INT)) FROM Quiz"
-    query = "Insert Into Quiz values (?, ?, ?, ?, ?)"
     cursor.execute(query_id)
-    quiz_id = 0
-    id_exe = cursor.fetchone()[0]
-    print("Quiz: ", id_exe)
-    if id_exe:
-        quiz_id = int(id_exe)
-    print("CHAPTER", chapter)
-    cursor.execute(query, generate_quiz_id(quiz_id + 1), "Quiz Name", "Description", lvl, chapter)
-    cursor.commit()
-    return quiz_id + 1
+    result = cursor.fetchone()
+    print("QuizID: ", result[0])
+    if select(f"Select IsDeleted from Quiz where QuizID = '{generate_quiz_id(result[0])}'")[0][0]:
+        update_DB(f"Update Quiz set IsDeleted = 0 where QuizID = '{generate_quiz_id(result[0])}'")
+        cursor.commit()
+        return int(result[0])
+    else:
+        query_id = "SELECT MAX(CAST(SUBSTRING(QuizID, 4, LEN(QuizID)) AS INT)) FROM Quiz"
+        cursor.execute(query_id)
+        id_exe = cursor.fetchone()[0]
+        query = "Insert Into Quiz values (?, ?, ?, ?, ?, ?)"
+        quiz_id = 0
+        print("Quiz: ", id_exe)
+        if id_exe:
+            quiz_id = int(id_exe)
+        print("CHAPTER", chapter)
+        cursor.execute(query, generate_quiz_id(quiz_id + 1), "Quiz Name", "Description", lvl, chapter, 0)
+        cursor.commit()
+        return quiz_id + 1
 
 
-def Delete_Chapter(chapter_index, delete_question):
+def Delete_Chapter(chapter_index, quiz_ids):
     print(chapter_index)
-    query = "Delete from Chapter where ChapterID = ?"
-    quiz_match_delete = "Delete from Quiz where ChapterID = ?"
-    query_question = "Delete from Question where QuizID = ?"
+    try:
+        query = "Delete Chapter where ChapterID = ?"
+        quiz_match_delete = "Delete Quiz where ChapterID = ?"
 
-    for i in delete_question:
-        cursor.execute(query_question, generate_quiz_id(i))
-    cursor.execute(quiz_match_delete, generate_chapter_id(chapter_index))
-    cursor.execute(query, generate_chapter_id(chapter_index))
+        for i in quiz_ids:
+            for questionID in select(f"Select QuestionID from Question where QuizID = '{generate_quiz_id(i)}'"):
+                # Attempt to hard delete the question
+                try:
+                    question_delete_query = "DELETE Question WHERE QuestionID = ?"
+                    cursor.execute(question_delete_query,  questionID[0])
+                except Exception as e:
+                    print("Error: ", e)
+        cursor.execute(quiz_match_delete, generate_chapter_id(chapter_index))
+        cursor.execute(query, generate_chapter_id(chapter_index))
+    except pyodbc.IntegrityError as e:
+        print("Delete Chapter: ", e)
+        query = "Update Chapter set IsDeleted = 1 where ChapterID = ?"
+        quiz_match_delete = "Update Quiz set IsDeleted = 1 where ChapterID = ?"
+        question_soft_delete_query = "UPDATE Question SET IsDeleted = 1 WHERE QuizID = ?"
+        for quiz in quiz_ids:
+            cursor.execute(question_soft_delete_query, generate_quiz_id(quiz))
+        cursor.execute(quiz_match_delete, generate_chapter_id(chapter_index))
+        cursor.execute(query, generate_chapter_id(chapter_index))
     cursor.commit()
 
 
 def Add_ChapterDB():
     query_id = "SELECT MAX(CAST(SUBSTRING(ChapterID, 4, LEN(ChapterID)) AS INT)) FROM Chapter"
-    query = "Insert Into Chapter values (?, ?)"
     cursor.execute(query_id)
-    chap_id = 0
-    id_exe = cursor.fetchone()[0]
-    print("Chapter: ", id_exe)
-    if id_exe:
-        chap_id = int(id_exe)
-    cursor.execute(query, generate_chapter_id(chap_id + 1), f"Chapter {chap_id + 1}")
-
-    print("Chapter update")
-    cursor.commit()
-    return f"CHA{chap_id + 1:02d}"
+    result = cursor.fetchone()
+    print("ChapID", result[0])
+    print(select(f"Select IsDeleted from Chapter where ChapterID = '{generate_chapter_id(result[0])}'")[0][0])
+    if select(f"Select IsDeleted from Chapter where ChapterID = '{generate_chapter_id(result[0])}'")[0][0]:
+        update_DB(f"Update Chapter set IsDeleted = 0 where ChapterID = '{generate_chapter_id(result[0])}'")
+        cursor.commit()
+        return f"CHA{int(result[0]):02d}"
+    else:
+        query_id = "SELECT MAX(CAST(SUBSTRING(ChapterID, 4, LEN(ChapterID)) AS INT)) FROM Chapter"
+        cursor.execute(query_id)
+        id_exe = cursor.fetchone()[0]
+        query = "Insert Into Chapter values (?, ?, ?)"
+        chap_id = 0
+        print("Chapter: ", id_exe)
+        if id_exe:
+            chap_id = int(id_exe)
+        cursor.execute(query, generate_chapter_id(chap_id + 1), f"Chapter {chap_id + 1}", 0)
+        cursor.commit()
+        print("Chapter update")
+        return f"CHA{chap_id + 1:02d}"
 
 
 # def Update_Database(admin_id):
@@ -384,22 +427,29 @@ def Add_ChapterDB():
 #             index += 1
 #     cursor.commit()
 
-
 def Delete_QuizLVL(quiz_id):
-    query = "Delete from Quiz where QuizID = ?"
+    query = "Update Quiz set IsDeleted = 1 where QuizID = ?"
     print("Delete_QuizLVL: ", generate_quiz_id(quiz_id))
     try:
         cursor.execute(query, generate_quiz_id(quiz_id))
-
         cursor.commit()
     except pyodbc.IntegrityError:
         return True
 
 
 def Delete_All(quiz_id):
-    query = "Delete from Question where QuizID = ?"
+    try:
+        question_delete_query = "DELETE FROM Question WHERE QuizID = ?"
+        for quiz in quiz_id:
+            # Attempt to hard delete the question
+            cursor.execute(question_delete_query, generate_quiz_id(quiz))
+    except pyodbc.IntegrityError:
+        # If deletion fails, perform a soft delete: mark the question as deleted.
+        # Note: Typically a soft-delete flag is set to 1.
+        question_soft_delete_query = "UPDATE Question SET IsDeleted = 1 WHERE QuizID = ?"
+        for quiz in quiz_id:
+            cursor.execute(question_soft_delete_query, generate_quiz_id(quiz))
     print("Question: ", generate_quiz_id(quiz_id))
-    cursor.execute(query, generate_quiz_id(quiz_id))
     cursor.commit()
 
 
@@ -438,10 +488,32 @@ def Update_title(info, lvl, chapter):
     cursor.commit()
 
 
-def Delete_Question(quiz_id, question):
-    query = "Delete from Question where QuizID = ? and Question = ?"
-    cursor.execute(query, generate_quiz_id(quiz_id), question)
+def Delete_Question(quiz_id, questionID, filters):
+    print(questionID, quiz_id)
+    try:
+        query = "Delete Question where QuizID = ? and QuestionID = ?"
+        cursor.execute(query, generate_quiz_id(quiz_id), questionID)
+    except pyodbc.IntegrityError as e:
+        print("Attempt Delete: ", e)
+        query = "update Question set IsDeleted = 1 where QuizID = ? and QuestionID = ?"
+        cursor.execute(query, generate_quiz_id(quiz_id), questionID)
     cursor.commit()
+    print("In Database: ", filters[0], filters[1])
+    print(chapter_quizQ)
+    if os.path.exists("Quiz_draft2.json"):
+        try:
+            if len(chapter_quizQ[(filters[0])][filters[1]]) == 1:
+                print(chapter_quizQ[(filters[0])][filters[1]])
+                os.remove("Quiz_draft2.json")
+            else:
+                try:
+                    chapter_quizQ[filters[0]][filters[1]].pop(str(questionID))
+                    with open("Quiz_draft2.json", "w") as File:
+                        json.dump(chapter_quizQ, File, indent=4)
+                except Exception as e:
+                    print("Error", e)
+        except Exception as e:
+            print("Error: ", e)
 
 
 def Delete_Quiz(lvl):
@@ -460,10 +532,5 @@ if __name__ == "__main__":
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
     # print(select("Select * from Game_Session where StudentID = 'S0001'"))
-    [update_DB(f"UPDATE [{i}] SET [Password] = 'c3977a81c8b6c4218e9f922905ec67650de7e044d2806014ccbe95c55d6c34de' "
-               f"WHERE Email = "
-               f"'jasonwong22015@gmail.com'") for i in ['Admin', 'Student', 'Owner']]
-    update_DB(f"Update [Admin] set [Password] = 'c3977a81c8b6c4218e9f922905ec67650de7e044d2806014ccbe95c55d6c34de' "
-              f"where Email = 'jasonwong22015@gmail.com'")
-    [print(i) for i in ["Student", "Admin", "Owner"]]
+    [print(i) for i in select(f"Select QuestionID from Question where QuizID = 'QIZ16'")]
     # select(f"Select Name from {[i for i in ['Student', 'Admin', 'Owner']]}")
