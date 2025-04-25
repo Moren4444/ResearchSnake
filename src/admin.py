@@ -12,8 +12,6 @@ class AdminPage:
 
         self.hedrNavFdbkBx = ft.Container(
             content=self.hedrNavFdbk,
-            padding=0,
-            margin=0,
             alignment=ft.alignment.top_right,
         )
         if getattr(sys, 'frozen', False):
@@ -80,7 +78,7 @@ class AdminPage:
                     self.draftBtnPng.src = getColor(self.draftBtnPng.src)
                 elif e.control.key == "hedrNavUsersBtn":
                     self.hedrNavFdbk.value = f"Manage {'Student' if role == 'Admin' else 'Admin'} Account"
-                    self.hedrNavFdbkBx.margin = ft.margin.only(right=300)
+                    self.hedrNavFdbkBx.margin = ft.margin.only(right=300) if role == "Admin" else ft.margin.only(right=181)
                     self.userBtnPng.src = getColor(self.userBtnPng.src)
                 elif e.control.key == "hedrNavQuizBtn":
                     self.hedrNavFdbk.value = "Manage Quiz"
@@ -88,11 +86,11 @@ class AdminPage:
                     self.quizBtnPng.src = getColor(self.quizBtnPng.src)
                 elif e.control.key == "hedrNavProfileBtn":
                     self.hedrNavFdbk.value = f"Profile"
-                    self.hedrNavFdbkBx.margin = ft.margin.only(right=130)
+                    self.hedrNavFdbkBx.margin = ft.margin.only(right=130) if role == "Admin" else ft.margin.only(right=118)
                     self.profileBtnPng.src = getColor(self.profileBtnPng.src)
                 elif e.control.key == "hedrNavLogoutBtn":
                     self.hedrNavFdbk.value = f"Logout"
-                    self.hedrNavFdbkBx.margin = ft.margin.only(right=25)
+                    self.hedrNavFdbkBx.margin = ft.margin.only(right=25) if role == "Admin" else ft.margin.only(right=13)
                     self.logoutBtnPng.src = getColor(self.logoutBtnPng.src)
             else:
                 self.hedrNavFdbk.value = ""

@@ -477,6 +477,7 @@ def main(page: ft.Page):
         return ft.View(
             route="/",
             padding=0,  # Remove default view padding
+            bgcolor="#000000",
             controls=[
                 ft.Stack(
                     [
