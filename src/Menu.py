@@ -18,7 +18,7 @@ def Menu(player_info):
     pygame.init()
     pygame.mixer.init()
     running = True
-    screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((1280, 800))
     close = pygame.image.load(resource_path("assets/close.png"))  # Use resource_path
     lock = pygame.image.load(resource_path("assets/locked.png"))  # Use resource_path
 
@@ -75,33 +75,33 @@ def Menu(player_info):
         chapter_quizzes[chapter_id].append(quiz[i])
     print(chapter_quizzes)
     # Process each chapter
-    for chapter_index, (chapter_id, quizzes) in enumerate(chapter_quizzes.items()):
-        print(f"Chapter {chapter_id}")
-
-        y_offset = 150 * chapter_index  # +150 y-offset per chapter
-
-        # Calculate length ONCE PER CHAPTER (based on number of quizzes)
-        num_quizzes = len(quizzes)
-        length = (59 * scale) + (25 * num_quizzes * scale)  # Adjust formula as needed
-
-        # Store ONE entry per chapter
-        length_of_quiz.append((length, y_offset))  # Now 1 entry per chapter
-
-        # Process quizzes (for rects and levels)
-        for index, j in enumerate(quizzes):
-            rect = pygame.Rect(
-                (53 * scale) + (30 * index * scale),
-                (45 * scale) + y_offset,
-                18 * scale,
-                18 * scale
-            )
-            levels = (
-                (59 * scale) + (30 * index * scale),
-                (50 * scale) + y_offset
-            )
-            list_of_levels.append(levels)
-            list_of_quiz.append(rect)
-            all_testing_data[(f"Chapter {chapter_id}", j[0])] = j[1]
+    # for chapter_index, (chapter_id, quizzes) in enumerate(chapter_quizzes.items()):
+    #     print(f"Chapter {chapter_id}")
+    #
+    #     y_offset = 150 * chapter_index  # +150 y-offset per chapter
+    #
+    #     # Calculate length ONCE PER CHAPTER (based on number of quizzes)
+    #     num_quizzes = len(quizzes)
+    #     length = (59 * scale) + (25 * num_quizzes * scale)  # Adjust formula as needed
+    #
+    #     # Store ONE entry per chapter
+    #     length_of_quiz.append((length, y_offset))  # Now 1 entry per chapter
+    #
+    #     # Process quizzes (for rects and levels)
+    #     for index, j in enumerate(quizzes):
+    #         rect = pygame.Rect(
+    #             (53 * scale) + (30 * index * scale),
+    #             (45 * scale) + y_offset,
+    #             18 * scale,
+    #             18 * scale
+    #         )
+    #         levels = (
+    #             (59 * scale) + (30 * index * scale),
+    #             (50 * scale) + y_offset
+    #         )
+    #         list_of_levels.append(levels)
+    #         list_of_quiz.append(rect)
+    #         all_testing_data[(f"Chapter {chapter_id}", j[0])] = j[1]
 
     print(quiz)
     quiz_level = 0
@@ -138,7 +138,7 @@ def Menu(player_info):
         screen.fill((50, 50, 50))
         # screen.blit(background_scale, (0, 0))
         background.play(screen)
-        panda_spirit.draw(screen, (100, 650))
+        panda_spirit.draw(screen)
         loc = font(30).render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
         screen.blit(loc, (1100, 0))
         right = Arrow("right", (588, 572), push=Push_r)
@@ -204,6 +204,7 @@ def Menu(player_info):
 
         screen.blit(home_s, (1140, 50))
         mouse_pos = pygame.mouse.get_pos()  # Get mouse position
+
         # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -216,6 +217,7 @@ def Menu(player_info):
                     Confirm_Logout = True
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click_sound.play()
+                panda_spirit.handle_click(mouse_pos)
                 keyboard.handle_click(mouse_pos)
                 if alert:
                     # Close the overlay if clicked anywhere
@@ -357,3 +359,23 @@ def Menu(player_info):
 
         pygame.display.update()
     pygame.quit()
+
+
+class Quiz:
+    def __init__(self):
+        self.chapter_quizzes = {}
+        self.chapter, self.quiz = Chapter_Quiz()
+        for i in range(len(self.quiz)):
+            chapter_id = int(self.quiz[i][4][3:])
+            if chapter_id not in self.chapter_quizzes:
+                self.chapter_quizzes[chapter_id] = []
+            self.chapter_quizzes[chapter_id].append(self.quiz[i])
+        self.sorted_chapters = sorted(self.chapter_quizzes.keys())
+        self.all_quizzes_global = []
+        self.global_quiz_id = 0
+        for chap_id in self.sorted_chapters:
+            quizzes = self.chapter_quizzes[chap_id]
+            for q in quizzes:
+                self.all_quizzes_global.append((chap_id, q, self.global_quiz_id))
+                self.global_quiz_id += 1
+        self.total_page = (len(self.sorted_chapters) + 2) // 3

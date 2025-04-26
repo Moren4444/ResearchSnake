@@ -27,7 +27,7 @@ def delete_login_credentials():
     update = load_login_credentials()
     update["username"] = ""
     update["password"] = ""
-    with open("user_credentials.json", "w") as file:
+    with open(resource_path("user_credentials.json"), "w") as file:
         json.dump(update, file)
 
 
@@ -36,7 +36,7 @@ def save_login_credentials(username: str, password: str):
     update = load_login_credentials()
     update["username"] = username
     update["password"] = password
-    with open("user_credentials.json", "w") as file:
+    with open(resource_path("user_credentials.json"), "w") as file:
         json.dump(update, file)
 
 
@@ -48,8 +48,8 @@ def hash_password(password: str) -> str:
 def load_login_credentials():
     """Load credentials from the JSON file."""
     try:
-        if os.path.exists("user_credentials.json"):
-            with open("user_credentials.json", "r") as file:
+        if resource_path("user_credentials.json"):
+            with open(resource_path("user_credentials.json"), "r") as file:
                 return json.load(file)
         return {"username": "", "password": "", "img": ""}  # Return empty values if file doesn't exist
     except Exception as e:
@@ -86,24 +86,19 @@ def main(page: ft.Page):
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
     # Check if running as a PyInstaller executable
-    if getattr(sys, 'frozen', False):
-        base_path = sys._MEIPASS  # PyInstaller's temp extraction path
-    else:
-        base_path = os.path.dirname(__file__)  # Normal script execution path
 
     # Get current system details
     current_user = getpass.getuser()  # Get current username
     current_hostname = platform.node()  # Get current device name
     # dotenv_path = os.path.join(os.getenv("APPDATA"), "Owner Store", ".env")  # Get correct .env path
 
-    background_path = os.path.join(base_path, "assets", "Background_audio.mp3")
+    background_path = resource_path("assets/Background_audio.mp3")
     audio1 = ft.Audio(
         src=background_path, autoplay=True
     )
 
-    forest_image_path = os.path.join(base_path, "assets", "Forest.png")
-    logo_path = os.path.join(base_path, "assets", "ResearchSnake.png")
-    click_path = os.path.join(base_path, "assets", "Click_Audio.mp3")
+    logo_path = resource_path("assets/ResearchSnake.png")
+    click_path = resource_path("assets/Click_Audio.mp3")
     page.overlay.append(audio1)
     page.update()
 
@@ -375,7 +370,8 @@ def main(page: ft.Page):
                         [update_DB(f"UPDATE [{i}] SET [Password] = '{pass_value}' WHERE Email = "
                                    f"'{email.value}@gmail.com'") for i in ['Student', 'Admin', 'Owner']]
 
-                        page.dialog = ft.AlertDialog(title=ft.Text("Password Changed"), bgcolor="#544f4e")
+                        page.dialog = ft.AlertDialog(title=ft.Text("Password Changed", color="#FFFFFF"),
+                                                     bgcolor="#544f4e")
                         page.close(change_dialog)
                         page.open(page.dialog)
                         page.update()

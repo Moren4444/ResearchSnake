@@ -733,8 +733,19 @@ class Keyboard_Writing:
 
 
 def load_image():
-    with open("Red_Panda_Sprite_Sheet.json", "r") as file:
+    with open(resource_path("Red_Panda_Sprite_Sheet.json"), "r") as file:
         return json.load(file)
+
+
+from enum import Enum, auto
+
+
+class State(Enum):
+    IDLE = auto()
+    IDLE2 = auto()
+    SLEEP = auto()
+    ATTACK = auto()
+    MOVEMENT = auto()
 
 
 class RedPanda:
@@ -746,44 +757,164 @@ class RedPanda:
         self.start_time = pygame.time.get_ticks()
         self.frames = []
         self.current_frame = 0
+        self.x = 100
         self.last_update_time = pygame.time.get_ticks()
         self.loop = 6
         self.frame_duration = 130  # milliseconds per frame
-        self.sprite_sheet = pygame.image.load(resource_path("Assets/Red Panda Sprite Sheet.png"))
+        self.sprite_sheet_orig = pygame.image.load(resource_path("Assets/Red Panda Sprite Sheet.png"))
+        self.sprite_sheet_flip = pygame.transform.flip(self.sprite_sheet_orig, True, False)
+        self.sprite_sheet_active = self.sprite_sheet_orig
+        self.reverse_frames = False
+        self.mouse_speed_threshold = 1.0
+        # facing: +1 = right, –1 = left
+        self.facing = +1
+
+        # for “cursor-stopped” detection
+        mx, my = pygame.mouse.get_pos()
+        self.prev_cursor_x = mx
+        self.last_cursor_move = pygame.time.get_ticks()
+
+        # rest of your init…
+        self.state = State.IDLE
+        self.state_start = pygame.time.get_ticks()
+        self.idle_cycle = 0
+        self._setup_state(State.IDLE)
+
+    def _setup_state(self, new_state):
+        """Initialize any variables when entering a new_state."""
+        self.state = new_state
+        self.state_start = pygame.time.get_ticks()
+        if new_state == State.IDLE:
+            self.set_status("Idle")
+            self.loop = 6
+        elif new_state == State.IDLE2:
+            self.set_status("Idle2")
+            self.idle_cycle = 1
+            self.loop = 6
+        elif new_state == State.SLEEP:
+            self.set_status("Sleep")
+            self.loop = 8
+        elif new_state == State.ATTACK:
+            self.set_status("Attack")
+            self.loop = 8
+        elif new_state == State.MOVEMENT:
+            self.set_status("Movement")
+            self.loop = 8
+            # reset cursor-stopped timer
+            self.prev_cursor_x = pygame.mouse.get_pos()[0]
+            self.last_cursor_move = pygame.time.get_ticks()
+
+        self.current_frame = 0
+        self.load_frames()
 
     def load_frames(self):
         self.frames.clear()
-        for i in range(self.loop):  # 6 idle frames
-            frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {i}.ase"]["frame"]
-            self.frames.append(frame_data)
+        if not self.reverse_frames:
+            for i in range(self.loop):  # 6 idle frames
+                frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {i}.ase"]["frame"]
+                self.frames.append(frame_data)
+        else:
+            if self.loop > 6:
+                for i in range(self.loop -1, -1, -1):  # 6 idle frames
+                    frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {i}.ase"]["frame"]
+                    self.frames.append(frame_data)
+            else:
+                for i in range(1, 7):
+                    frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {8 - i}.ase"]["frame"]
+                    self.frames.append(frame_data)
 
     def _update(self):
         now = pygame.time.get_ticks()
-        elapsed = now - self.start_time  # ✅ how long since reset
-        if elapsed > 5000:
-            self.set_status("Idle2")
-            if elapsed > 6000:
-                self.set_status("Idle")
-                if elapsed > 7000:
-                    self.loop = 8
-                    self.set_status("Sleep")
+        state_time = now - self.state_start
 
-        if self.get_status() != self.get_prev_status():
-            self.set_prev_status(self.get_status())
-            self.current_frame = 0
-            self.load_frames()
+        if self.state == State.MOVEMENT:
+            mx = pygame.mouse.get_pos()[0]
 
+            # Determine facing based on cursor position
+            if mx < self.x and self.facing != -1:
+                self.facing = -1
+                self.reverse_frames = True
+                self.sprite_sheet_active = self.sprite_sheet_flip
+                self.load_frames()  # Reload frames without reversing
+            elif mx > self.x and self.facing != +1:
+                self.facing = +1
+                self.reverse_frames = False
+                self.sprite_sheet_active = self.sprite_sheet_orig
+                self.load_frames()  # Reload frames without reversing
+
+        # 1) Idle→Idle2→Idle→Sleep cycle
+        if self.state == State.IDLE and self.idle_cycle == 0 and state_time > 3000:
+            self._setup_state(State.IDLE2)
+        elif self.state == State.IDLE2 and state_time > 1000:
+            self._setup_state(State.IDLE)
+        elif self.state == State.IDLE and self.idle_cycle == 1 and state_time > 1000:
+            self._setup_state(State.SLEEP)
+
+        # 2) Finish ATTACK → go to MOVE
+        elif self.state == State.ATTACK and state_time > self.loop * self.frame_duration:
+            self._setup_state(State.MOVEMENT)
+
+        # 3) MOVE: follow cursor or sleep on fast move
+        if self.state == State.MOVEMENT:
+            mx = pygame.mouse.get_pos()[0]
+
+            # determine facing
+            if mx < self.x and self.facing != -1:
+                self.facing = -1
+                self.reverse_frames = True
+                self.sprite_sheet_active = self.sprite_sheet_flip
+                self.load_frames()
+            elif mx > self.x and self.facing != +1:
+                self.facing = +1
+                self.reverse_frames = False
+                self.sprite_sheet_active = self.sprite_sheet_orig
+                self.load_frames()
+
+            # compute speed
+            dx = abs(mx - self.prev_cursor_x)
+            dt = now - self.last_cursor_move + 1
+            speed = dx / dt
+
+            # if whip too fast → sleep
+            if speed > self.mouse_speed_threshold:
+                self.idle_cycle = 0
+                self._setup_state(State.IDLE)
+
+            # if we’ve caught the cursor (stopped over us) → idle
+            elif abs(self.x - mx) < 1:
+                self.idle_cycle = 0
+                self._setup_state(State.IDLE)
+
+            # else chase
+            else:
+                step = 10
+                diff = mx - self.x
+                if abs(diff) > step:
+                    self.x += step if diff > 0 else -step
+                else:
+                    self.x = mx
+
+        # 4) advance animation frame
         if now - self.last_update_time > self.frame_duration:
             self.last_update_time = now
             self.current_frame = (self.current_frame + 1) % len(self.frames)
 
-    def draw(self, screen, position):
+    def handle_click(self, mouse_pos):
+        if not pygame.Rect(self.x, 650, 120, 120).collidepoint(mouse_pos):
+            return
+        # record where we clicked so MOVE can use it
+        self.click_x = mouse_pos[0]
+        self.idle_cycle = 0  # reset idle progression
+        # enter ATTACK immediately
+        self._setup_state(State.ATTACK)
+
+    def draw(self, screen):
         self._update()
         frame = self.frames[self.current_frame]
         rect = pygame.Rect(frame["x"], frame["y"], frame["w"], frame["h"])
-        image = self.sprite_sheet.subsurface(rect)
-        scaled_image = pygame.transform.scale(image, (120, 120))
-        screen.blit(scaled_image, position)
+        img = self.sprite_sheet_active.subsurface(rect)
+        img = pygame.transform.scale(img, (120, 120))
+        screen.blit(img, (self.x, 650))
 
     def reset(self):
         self.start_time = pygame.time.get_ticks()

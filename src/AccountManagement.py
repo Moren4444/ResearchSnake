@@ -24,16 +24,10 @@ def account_management(page: ft.Page, role, audio1, audio2):
         print(f"Attempting to delete user with ID: {user_id}")
 
         def confirm_delete(e):
-            nonlocal users, role
-            # target = "Student" if role == "Admin" else "Admin"
-            delete_user(user_id, role)
-            users = admin_profile_info() if role == "Owner" else stu_profile_info()
+            delete_user(user_id)
+            nonlocal users
+            users = admin_profile_info()
             table.rows = create_rows()
-            page.snack_bar = ft.SnackBar(
-                content=ft.Text("The user is deleted successfully!", color="white"),
-                bgcolor="green"
-            )
-            page.open(page.snack_bar)
             page.update()
 
         page.dialog = ft.AlertDialog(
@@ -74,7 +68,7 @@ def account_management(page: ft.Page, role, audio1, audio2):
                         ft.DataCell(ft.Text(str(user[4]), color="white")),  # Level
                         # ft.DataCell(ft.Text(user[6], color="white")),  # Role
                         ft.DataCell(ft.Text(str(user[5]), color="white")),  # Registered Date
-                        ft.DataCell(ft.Text(time_ago(user[-1]), color="white")),  # Last Login
+                        ft.DataCell(ft.Text(time_ago(user[6]), color="white")),  # Last Login
                         ft.DataCell(
                             ft.Row(
                                 [
@@ -139,6 +133,14 @@ def account_management(page: ft.Page, role, audio1, audio2):
     #     icon_color="white"
     # )
 
+    scrollable_table = ft.Container(
+        content=ft.ListView(
+            controls=[table],
+            height=400,  # Adjust height as needed
+        ),
+        alignment=ft.alignment.center,
+    )
+
     back_button = ft.ElevatedButton("Logout", on_click=lambda e: page.go("/"))
 
     add_user_button = ft.ElevatedButton("Add New User", on_click=lambda e: page.go("/add_new_user"))
@@ -150,7 +152,7 @@ def account_management(page: ft.Page, role, audio1, audio2):
         controls = [
             Admin.page.appbar,
             Hedr,
-            ft.Row([table], alignment=ft.MainAxisAlignment.CENTER),
+            scrollable_table,
             ft.Row([add_user_button], alignment=ft.MainAxisAlignment.CENTER),
             ft.Row([back_button], alignment=ft.MainAxisAlignment.CENTER),
         ],
