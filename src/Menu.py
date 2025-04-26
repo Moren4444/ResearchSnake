@@ -18,7 +18,7 @@ def Menu(player_info):
     pygame.init()
     pygame.mixer.init()
     running = True
-    screen = pygame.display.set_mode((1280, 800))
+    screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
     close = pygame.image.load(resource_path("assets/close.png"))  # Use resource_path
     lock = pygame.image.load(resource_path("assets/locked.png"))  # Use resource_path
 
