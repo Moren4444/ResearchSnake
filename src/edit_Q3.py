@@ -581,7 +581,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         border_color="#FFFFFF",
         width=70,
         value=mode_list[1][1],
-        height=45,
         options=[
             ft.dropdown.Option(
                 text=label,

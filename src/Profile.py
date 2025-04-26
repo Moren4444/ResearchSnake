@@ -114,7 +114,6 @@ def profile_management(page: ft.Page, role, audio1, audio2):
             Hedr,
             ft.Container(
                 expand=True,
-                image_fit=ft.ImageFit.COVER,
                 content=ft.Container(
                     expand=True,
                     content=ft.Column(

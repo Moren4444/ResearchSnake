@@ -2,6 +2,7 @@ import os
 import sys
 
 import flet as ft
+from Resouce import resource_path
 
 
 class AdminPage:
@@ -14,16 +15,11 @@ class AdminPage:
             content=self.hedrNavFdbk,
             alignment=ft.alignment.top_right,
         )
-        if getattr(sys, 'frozen', False):
-            base_path = sys._MEIPASS  # PyInstaller's temp extraction path
-        else:
-            base_path = os.path.dirname(__file__)  # Normal script execution path
-
-        draft_png = os.path.join(base_path, "assets", "icons", "uHedrNavDraftBtn.png")
-        acc_png = os.path.join(base_path, "assets", "icons", "uHedrNavUsersBtn.png")
-        quiz_png = os.path.join(base_path, "assets", "icons", "uHedrNavQuizBtn.png")
-        profile_png = os.path.join(base_path, "assets", "icons", "uHedrNavProfileBtn.png")
-        logout_png = os.path.join(base_path, "assets", "icons", "uHedrNavLogoutBtn.png")
+        draft_png = resource_path("assets/icons/uHedrNavDraftBtn.png")
+        acc_png = resource_path("assets/icons/uHedrNavUsersBtn.png")
+        quiz_png = resource_path("assets/icons/uHedrNavQuizBtn.png")
+        profile_png = resource_path("assets/icons/uHedrNavProfileBtn.png")
+        logout_png = resource_path("assets/icons/uHedrNavLogoutBtn.png")
 
         self.btnWidth = 55
         self.btnHeight = 55
