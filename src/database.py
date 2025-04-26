@@ -268,6 +268,7 @@ def Retrieve_Question(ids, column="*"):
 
     num_column = len(column.split(", "))
     with pyodbc.connect(connection_string):
+        print("Test: ", generate_quiz_id(quiz_id))
         query = f"SELECT {column} from Question Where QuizID = ? and IsDeleted = 0"
         cursor.execute(query, (generate_quiz_id(quiz_id),))
         if num_column > 1:
@@ -428,7 +429,7 @@ def Add_ChapterDB():
 #     cursor.commit()
 
 def Delete_QuizLVL(quiz_id):
-    query = "Update Quiz set IsDeleted = 1 where QuizID = ?"
+    query = "Delete Quiz where QuizID = ?"
     print("Delete_QuizLVL: ", generate_quiz_id(quiz_id))
     try:
         cursor.execute(query, generate_quiz_id(quiz_id))
@@ -439,18 +440,21 @@ def Delete_QuizLVL(quiz_id):
 
 def Delete_All(quiz_id):
     try:
-        question_delete_query = "DELETE FROM Question WHERE QuizID = ?"
-        for quiz in quiz_id:
-            # Attempt to hard delete the question
-            cursor.execute(question_delete_query, generate_quiz_id(quiz))
+        print(quiz_id)
+        questionID = [i[0] for i in select(f"Select QuestionID from Question where QuizID = '{generate_quiz_id(quiz_id)}'")]
+        question_delete_query = "Delete Question where QuestionID = ?"
+        print(questionID)
+        for q_id in questionID:
+            cursor.execute(question_delete_query, (q_id,))
+            cursor.commit()
     except pyodbc.IntegrityError:
+        print("Delete All: ", generate_quiz_id(quiz_id))
         # If deletion fails, perform a soft delete: mark the question as deleted.
         # Note: Typically a soft-delete flag is set to 1.
         question_soft_delete_query = "UPDATE Question SET IsDeleted = 1 WHERE QuizID = ?"
-        for quiz in quiz_id:
-            cursor.execute(question_soft_delete_query, generate_quiz_id(quiz))
+        cursor.execute(question_soft_delete_query, generate_quiz_id(quiz_id))
+        cursor.commit()
     print("Question: ", generate_quiz_id(quiz_id))
-    cursor.commit()
 
 
 def delete_user(user_id, role):
@@ -532,5 +536,7 @@ if __name__ == "__main__":
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
     # print(select("Select * from Game_Session where StudentID = 'S0001'"))
-    [print(i) for i in select(f"Select QuestionID from Question where QuizID = 'QIZ16'")]
+    for i in range(1, 7):
+        print(8 - i)
+
     # select(f"Select Name from {[i for i in ['Student', 'Admin', 'Owner']]}")

@@ -2,11 +2,8 @@ import flet as ft
 from database import add_new_student, add_new_admin, check_existing
 from datetime import datetime
 from admin import AdminPage
+import re
 import hashlib
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives import hashes
 
 
 def new_user(page: ft.Page, role, audio1, audio2):
@@ -24,18 +21,42 @@ def new_user(page: ft.Page, role, audio1, audio2):
         """Hash a password using SHA-256."""
         return hashlib.sha256(password.encode()).hexdigest()
 
+    def on_change_user(e):
+        value = e.control.value
+        try:
+            # Prevent typing anything ≤ 1
+            if re.search(r'[^a-zA-Z0-9]', value):
+                # Reset the value (clears the invalid input)
+                e.control.value = value[:-1]
+            e.control.update()
+        except ValueError:
+            pass  # Let NumbersOnlyInputFilter handle non-numeric characters
+
     # Common fields for both roles
     username_field = ft.TextField(label="Username", bgcolor="#000000", width=156.5 * 3, height=25 * 3, color="white",
-                                  border_color="white", label_style=ft.TextStyle(color="white"))
+                                  border_color="white", label_style=ft.TextStyle(color="white"),
+                                  on_change=on_change_user)
     email_field = ft.TextField(label="Email Address", bgcolor="#000000", width=156.5 * 3, height=25 * 3, color="white",
                                border_color="white", label_style=ft.TextStyle(color="white"), prefix_text="",
                                suffix_text="@gmail.com")
     password_field = ft.TextField(label="Password", password=True, bgcolor="#000000", width=156.5 * 3, height=25 * 3,
                                   color="white", border_color="white", label_style=ft.TextStyle(color="white"))
 
+    def on_change(e):
+        value = e.control.value
+        try:
+            # Prevent typing anything ≤ 1
+            if value and int(value) < 1:
+                # Reset the value (clears the invalid input)
+                e.control.value = ""
+            e.control.update()
+        except ValueError:
+            pass  # Let NumbersOnlyInputFilter handle non-numeric characters
+
     # Level field only for Admin
     level_field = ft.TextField(label="Level", bgcolor="#000000", width=156.5 * 3, height=25 * 3, color="white",
                                border_color="white",
+                               on_change=on_change,
                                input_filter=ft.NumbersOnlyInputFilter(),
                                label_style=ft.TextStyle(color="white")) if role == 'Admin' else None
 

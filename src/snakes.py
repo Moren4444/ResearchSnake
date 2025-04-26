@@ -16,12 +16,8 @@ class Snake:
         self.scale = scale
         self.turn_points = {}
         self.new_head = []
-        if getattr(sys, 'frozen', False):
-            self.base_path = sys._MEIPASS  # PyInstaller's temp extraction path
-        else:
-            self.base_path = os.path.dirname(__file__)  # Normal script execution path
-        death_path = os.path.join(self.base_path, "assets", "Death_Sound.mp3")
-        clock_path = os.path.join(self.base_path, "assets", "Clock_Ticking.mp3")
+        death_path = resource_path("assets/Death_Sound.mp3")
+        clock_path = resource_path("assets/Clock_Ticking.mp3")
         self.death_sound = pygame.mixer.Sound(death_path)
         self.clock = pygame.mixer.Sound(clock_path)
         self.resource_path = resource_path
