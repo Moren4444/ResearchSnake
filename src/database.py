@@ -7,9 +7,9 @@ import pyodbc
 # db_password = os.getenv("DB_PASSWORD")
 import json
 from datetime import datetime
-
+driver = pyodbc.drivers()[2]
 connection_string = (
-    "DRIVER={ODBC Driver 17 for SQL Server};"
+    f"DRIVER={driver};"
     "SERVER=26.71.121.211;"
     "DATABASE=ResearchSnake;"
     f"UID=sa;"  # Replace with your SQL username
@@ -536,7 +536,6 @@ if __name__ == "__main__":
     # print(Update_Database())
     # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
     # print(select("Select * from Game_Session where StudentID = 'S0001'"))
-    for i in range(1, 7):
-        print(8 - i)
+    print(pyodbc.drivers())
 
     # select(f"Select Name from {[i for i in ['Student', 'Admin', 'Owner']]}")
