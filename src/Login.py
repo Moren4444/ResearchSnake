@@ -391,7 +391,7 @@ def main(page: ft.Page):
                             width=330,
                             height=200
                         ),
-                        bgcolor = "#544f4e"
+                        bgcolor="#544f4e"
                     )
 
                     page.dialog = change_dialog
@@ -431,7 +431,7 @@ def main(page: ft.Page):
 
     forgot_pass = ft.TextButton(
         content=ft.Container(
-            content=ft.Text("Forgot Password", weight=ft.FontWeight.BOLD, size=17, color="#660b1d"),
+            content=ft.Text("Forgot Password", weight=ft.FontWeight.BOLD, size=17, color="#FFFFFF"),
 
         ),
         on_click=lambda e: Forgot_pass(e)
@@ -506,7 +506,7 @@ def main(page: ft.Page):
                                                                    width=156.5 * 3  # Ensure it has enough space
                                                                    ),
                                                             ft.ElevatedButton(
-                                                                content=ft.Text("Login", color="white", size=25),
+                                                                content=ft.Text("Login", color="#FFFFFF", size=25),
                                                                 bgcolor="#35AD30",
                                                                 width=84 * 3,
                                                                 height=20 * 3,
@@ -514,7 +514,7 @@ def main(page: ft.Page):
                                                                 on_click=lambda e: [play_click_sound(e), submit(e)]
                                                             ),
                                                             ft.TextButton(
-                                                                content=ft.Text("Sign Up", color="#05432c", size=25),
+                                                                content=ft.Text("Sign Up", color="#FFFFFF", size=25),
                                                                 on_click=lambda e: [play_click_sound(e),
                                                                                     pages.go("/signin")]
                                                             )
