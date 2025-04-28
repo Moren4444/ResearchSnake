@@ -371,15 +371,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             )
         )
 
-    def save_record(e, index, question):
-        current_question = question_title.value
-        current_options = [field.value for field in option_fields]
-        if original_data.get("options") is not None:
-            db_options = [str(opt[0]) if isinstance(opt, tuple) else str(opt) for opt in
-                          original_data.get("options")]
-            if current_question != original_data.get("question") or current_options != db_options:
-                page.open(dlg_modal)
-
     # Function to handle question deletion
     def delete_question(question):
         # Confirm deletion with a dialog

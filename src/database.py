@@ -7,9 +7,13 @@ import pyodbc
 # db_password = os.getenv("DB_PASSWORD")
 import json
 from datetime import datetime
-driver = pyodbc.drivers()[2]
+driver = pyodbc.drivers()
+
+print("ODBC Driver 17 for SQL Server" in driver)
+chosen_driver = 'ODBC Driver 17 for SQL Server' if 'ODBC Driver 17 for SQL Server' in driver else ('ODBC Driver 18 for '
+                                                                                                   'SQL Server')
 connection_string = (
-    f"DRIVER={driver};"
+    f"DRIVER={chosen_driver};"
     "SERVER=26.71.121.211;"
     "DATABASE=ResearchSnake;"
     f"UID=sa;"  # Replace with your SQL username

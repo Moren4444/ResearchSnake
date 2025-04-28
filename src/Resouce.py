@@ -177,7 +177,7 @@ class Profile:
         self.logout_rect = self.Logout_resize.get_rect(topleft=(1005, 113))
         self.open_profile = [False, False]
         self.list_avatar = []
-        self.img = load()["img"] if os.path.exists("user_credentials.json") else None
+        self.img = load()["img"] if os.path.exists(resource_path("user_credentials.json")) else None
         print(self.img)
         self.history_rect = pygame.Rect(
             (self.screen.get_width() - 401 * self.scale) / 2,
@@ -214,7 +214,7 @@ class Profile:
                     update = load()
                     update["img"] = f"Pic{index + 1}.png"
                     self.img = update["img"]
-                    with open("user_credentials.json", "w") as file:
+                    with open(resource_path("user_credentials.json"), "w") as file:
                         json.dump(update, file)
                     return
 
@@ -749,7 +749,7 @@ class State(Enum):
 
 
 class RedPanda:
-    def __init__(self):
+    def __init__(self, x, y):
         self.panda_rect = None
         self.status = "Idle"
         self.prev_status = "Idle2"
@@ -757,7 +757,8 @@ class RedPanda:
         self.start_time = pygame.time.get_ticks()
         self.frames = []
         self.current_frame = 0
-        self.x = 100
+        self.x = x
+        self.y = y
         self.last_update_time = pygame.time.get_ticks()
         self.loop = 6
         self.frame_duration = 130  # milliseconds per frame
@@ -824,80 +825,83 @@ class RedPanda:
                     self.frames.append(frame_data)
 
     def _update(self):
-        now = pygame.time.get_ticks()
-        state_time = now - self.state_start
+        try:
+            now = pygame.time.get_ticks()
+            state_time = now - self.state_start
 
-        if self.state == State.MOVEMENT:
-            mx = pygame.mouse.get_pos()[0]
+            if self.state == State.MOVEMENT:
+                mx = pygame.mouse.get_pos()[0]
 
-            # Determine facing based on cursor position
-            if mx < self.x and self.facing != -1:
-                self.facing = -1
-                self.reverse_frames = True
-                self.sprite_sheet_active = self.sprite_sheet_flip
-                self.load_frames()  # Reload frames without reversing
-            elif mx > self.x and self.facing != +1:
-                self.facing = +1
-                self.reverse_frames = False
-                self.sprite_sheet_active = self.sprite_sheet_orig
-                self.load_frames()  # Reload frames without reversing
+                # Determine facing based on cursor position
+                if mx < self.x and self.facing != -1:
+                    self.facing = -1
+                    self.reverse_frames = True
+                    self.sprite_sheet_active = self.sprite_sheet_flip
+                    self.load_frames()  # Reload frames without reversing
+                elif mx > self.x and self.facing != +1:
+                    self.facing = +1
+                    self.reverse_frames = False
+                    self.sprite_sheet_active = self.sprite_sheet_orig
+                    self.load_frames()  # Reload frames without reversing
 
-        # 1) Idle→Idle2→Idle→Sleep cycle
-        if self.state == State.IDLE and self.idle_cycle == 0 and state_time > 3000:
-            self._setup_state(State.IDLE2)
-        elif self.state == State.IDLE2 and state_time > 1000:
-            self._setup_state(State.IDLE)
-        elif self.state == State.IDLE and self.idle_cycle == 1 and state_time > 1000:
-            self._setup_state(State.SLEEP)
-
-        # 2) Finish ATTACK → go to MOVE
-        elif self.state == State.ATTACK and state_time > self.loop * self.frame_duration:
-            self._setup_state(State.MOVEMENT)
-
-        # 3) MOVE: follow cursor or sleep on fast move
-        if self.state == State.MOVEMENT:
-            mx = pygame.mouse.get_pos()[0]
-
-            # determine facing
-            if mx < self.x and self.facing != -1:
-                self.facing = -1
-                self.reverse_frames = True
-                self.sprite_sheet_active = self.sprite_sheet_flip
-                self.load_frames()
-            elif mx > self.x and self.facing != +1:
-                self.facing = +1
-                self.reverse_frames = False
-                self.sprite_sheet_active = self.sprite_sheet_orig
-                self.load_frames()
-
-            # compute speed
-            dx = abs(mx - self.prev_cursor_x)
-            dt = now - self.last_cursor_move + 1
-            speed = dx / dt
-
-            # if whip too fast → sleep
-            if speed > self.mouse_speed_threshold:
-                self.idle_cycle = 0
+            # 1) Idle→Idle2→Idle→Sleep cycle
+            if self.state == State.IDLE and self.idle_cycle == 0 and state_time > 3000:
+                self._setup_state(State.IDLE2)
+            elif self.state == State.IDLE2 and state_time > 1000:
                 self._setup_state(State.IDLE)
+            elif self.state == State.IDLE and self.idle_cycle == 1 and state_time > 1000:
+                self._setup_state(State.SLEEP)
 
-            # if we’ve caught the cursor (stopped over us) → idle
-            elif abs(self.x - mx) < 1:
-                self.idle_cycle = 0
-                self._setup_state(State.IDLE)
+            # 2) Finish ATTACK → go to MOVE
+            elif self.state == State.ATTACK and state_time > self.loop * self.frame_duration:
+                self._setup_state(State.MOVEMENT)
 
-            # else chase
-            else:
-                step = 10
-                diff = mx - self.x
-                if abs(diff) > step:
-                    self.x += step if diff > 0 else -step
+            # 3) MOVE: follow cursor or sleep on fast move
+            if self.state == State.MOVEMENT:
+                mx = pygame.mouse.get_pos()[0]
+
+                # determine facing
+                if mx < self.x and self.facing != -1:
+                    self.facing = -1
+                    self.reverse_frames = True
+                    self.sprite_sheet_active = self.sprite_sheet_flip
+                    self.load_frames()
+                elif mx > self.x and self.facing != +1:
+                    self.facing = +1
+                    self.reverse_frames = False
+                    self.sprite_sheet_active = self.sprite_sheet_orig
+                    self.load_frames()
+
+                # compute speed
+                dx = abs(mx - self.prev_cursor_x)
+                dt = now - self.last_cursor_move + 1
+                speed = dx / dt
+
+                # if whip too fast → sleep
+                if speed > self.mouse_speed_threshold:
+                    self.idle_cycle = 0
+                    self._setup_state(State.IDLE)
+
+                # if we’ve caught the cursor (stopped over us) → idle
+                elif abs(self.x - mx) < 1:
+                    self.idle_cycle = 0
+                    self._setup_state(State.IDLE)
+
+                # else chase
                 else:
-                    self.x = mx
+                    step = 10
+                    diff = mx - self.x
+                    if abs(diff) > step:
+                        self.x += step if diff > 0 else -step
+                    else:
+                        self.x = mx
 
-        # 4) advance animation frame
-        if now - self.last_update_time > self.frame_duration:
-            self.last_update_time = now
-            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            # 4) advance animation frame
+            if now - self.last_update_time > self.frame_duration:
+                self.last_update_time = now
+                self.current_frame = (self.current_frame + 1) % len(self.frames)
+        except Exception as e:
+            print("What do we have here: ", e)
 
     def handle_click(self, mouse_pos):
         if not pygame.Rect(self.x, 650, 120, 120).collidepoint(mouse_pos):
@@ -914,7 +918,7 @@ class RedPanda:
         rect = pygame.Rect(frame["x"], frame["y"], frame["w"], frame["h"])
         img = self.sprite_sheet_active.subsurface(rect)
         img = pygame.transform.scale(img, (120, 120))
-        screen.blit(img, (self.x, 650))
+        screen.blit(img, (self.x, self.y))
 
     def reset(self):
         self.start_time = pygame.time.get_ticks()

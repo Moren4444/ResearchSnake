@@ -13,7 +13,6 @@ import edit_Q3
 import AccountManagement
 import Profile
 import AddUser
-import sys
 import getpass
 import re
 import hashlib
@@ -48,7 +47,7 @@ def hash_password(password: str) -> str:
 def load_login_credentials():
     """Load credentials from the JSON file."""
     try:
-        if resource_path("user_credentials.json"):
+        if os.path.exists(resource_path("user_credentials.json")):
             with open(resource_path("user_credentials.json"), "r") as file:
                 return json.load(file)
         return {"username": "", "password": "", "img": ""}  # Return empty values if file doesn't exist

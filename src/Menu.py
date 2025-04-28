@@ -5,12 +5,23 @@ import sys
 import os
 from Page_Menu import page_menu
 from Resouce import Profile, Keyboard_Writing, RedPanda, Background, resource_path, font
+from Game_page import Game_page
 
 
 def return_to_menu(player):
     print("Return to menu")
     print(player)
     Menu(player)
+
+
+def Arrow(direction, position, color="blue", push=""):
+    if push == "":
+        path = resource_path(f"assets/MV_Icons_Letter_Buttons/Buttons/{color}-!arrow{direction}{push}.png")
+    else:
+        path = resource_path(f"assets/MV_Icons_Letter_Buttons/Buttons/{color}-!arrow{direction}-{push}.png")
+    arrows = pygame.image.load(path)
+    arrows = pygame.transform.scale(arrows, (32 * 2, 32 * 2))
+    return [arrows, arrows.get_rect(topleft=position)]
 
 
 def Menu(player_info):
@@ -45,15 +56,6 @@ def Menu(player_info):
     play = font(30).render("Play", True, (0, 0, 0))
     play_button = pygame.Rect(935, 550, 210, 100)
 
-    def Arrow(direction, position, color="blue", push=""):
-        if push == "":
-            path = resource_path(f"assets/MV_Icons_Letter_Buttons/Buttons/{color}-!arrow{direction}{push}.png")
-        else:
-            path = resource_path(f"assets/MV_Icons_Letter_Buttons/Buttons/{color}-!arrow{direction}-{push}.png")
-        arrows = pygame.image.load(path)
-        arrows = pygame.transform.scale(arrows, (32 * 2, 32 * 2))
-        return [arrows, arrows.get_rect(topleft=position)]
-
     # available_question_quiz = Select()
     # print("Available", available_question_quiz)
     overlay = pygame.Surface((1280, 800), pygame.SRCALPHA)  # Enable per-pixel alpha
@@ -65,7 +67,7 @@ def Menu(player_info):
     yes_button = font(25).render("YES", True, (255, 255, 255))
     # print(question_unavailable.get_width())
     # Group quizzes by chapter
-    panda_spirit = RedPanda()
+    panda_spirit = RedPanda(100, 650)
     panda_spirit.reset()
 
     for i in range(len(quiz)):
@@ -303,14 +305,17 @@ def Menu(player_info):
                 screen.blit(close_resize, (1200, 55))
                 # Animate the title
                 title = level_click[1][:char_index_title]
-                title_wrapped = wrap_text_word_based(title, 340, pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30))
+                title_wrapped = wrap_text_word_based(title, 340,
+                                                     pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30))
                 for i, line in enumerate(title_wrapped):
                     title_surface = font(30).render(line, True, (0, 0, 0))
                     screen.blit(title_surface, (850, 100 + i * 40))
 
                 # Animate the description
                 description = level_click[2][:char_index_description]
-                description_wrapped = wrap_text_word_based(description, 340, pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30))
+                description_wrapped = wrap_text_word_based(description, 340,
+                                                           pygame.font.Font(resource_path("assets/PeaberryBase.ttf"),
+                                                                            30))
                 screen.blit(description_title, (850, 200))
                 for i, line in enumerate(description_wrapped):
                     description_surface = font(30).render(line, True, (0, 0, 0))
@@ -359,23 +364,3 @@ def Menu(player_info):
 
         pygame.display.update()
     pygame.quit()
-
-
-class Quiz:
-    def __init__(self):
-        self.chapter_quizzes = {}
-        self.chapter, self.quiz = Chapter_Quiz()
-        for i in range(len(self.quiz)):
-            chapter_id = int(self.quiz[i][4][3:])
-            if chapter_id not in self.chapter_quizzes:
-                self.chapter_quizzes[chapter_id] = []
-            self.chapter_quizzes[chapter_id].append(self.quiz[i])
-        self.sorted_chapters = sorted(self.chapter_quizzes.keys())
-        self.all_quizzes_global = []
-        self.global_quiz_id = 0
-        for chap_id in self.sorted_chapters:
-            quizzes = self.chapter_quizzes[chap_id]
-            for q in quizzes:
-                self.all_quizzes_global.append((chap_id, q, self.global_quiz_id))
-                self.global_quiz_id += 1
-        self.total_page = (len(self.sorted_chapters) + 2) // 3
