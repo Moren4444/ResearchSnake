@@ -121,14 +121,14 @@ def signin_view(page, click):
                                                 width=156.5 * 3
                                             ),
                                             ft.ElevatedButton(
-                                                content=ft.Text("Sign Up", color="white", size=25),
+                                                content=ft.Text("Sign Up", color="#FFFFFF", size=25),
                                                 bgcolor="#35AD30",
                                                 width=84 * 3,
                                                 height=20 * 3,
                                                 on_click=lambda e: [click(e), submit(e, page)]
                                             ),
                                             ft.TextButton(
-                                                content=ft.Text("Login", color="#05432c", size=25),
+                                                content=ft.Text("Login", color="#FFFFFF", size=25),
                                                 on_click=lambda e: [click(e), page.go("/")]
                                             )
                                         ],
