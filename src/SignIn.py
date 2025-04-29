@@ -8,6 +8,7 @@ from Menu import Menu
 import sys
 import hashlib
 import re
+from Resouce import resource_path
 
 
 def hash_password(password: str) -> str:
@@ -52,11 +53,8 @@ confirm = ft.TextField(
     can_reveal_password=True,
     border_color="#FFFFFF"
 )
-if getattr(sys, 'frozen', False):
-    base_path = sys._MEIPASS  # PyInstaller's temp extraction path
-else:
-    base_path = os.path.dirname(__file__)  # Normal script execution path
-forest_image_path = os.path.join(base_path, "assets", "background.gif")
+
+forest_image_path = resource_path("assets/background.gif")
 background = ft.Container(
     # Load the background image
     content=ft.Image(

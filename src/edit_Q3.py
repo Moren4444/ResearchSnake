@@ -415,7 +415,8 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     def confirm_delete(question):
         # Perform the deletion logic here
         nonlocal question_id
-        question_id = select(f"Select * from Question where QuizID = '{f'QIZ{selected_index:02d}'}'")[current_q_index][
+        question_id = select(f"Select * from Question where IsDeleted = 0 and"
+                             f" QuizID = '{f'QIZ{selected_index:02d}'}'")[current_q_index][
             0]
         quiz_id = selected_index
         # Call a function to delete the question from the database
