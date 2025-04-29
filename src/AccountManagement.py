@@ -24,9 +24,12 @@ def account_management(page: ft.Page, role, audio1, audio2):
         print(f"Attempting to delete user with ID: {user_id}")
 
         def confirm_delete(e):
-            delete_user(user_id)
+            delete_user(user_id, role)
             nonlocal users
-            users = admin_profile_info()
+            if role == "Owner":
+                users = admin_profile_info()
+            elif role == "Admin":
+                users = stu_profile_info()
             table.rows = create_rows()
             page.update()
 
@@ -68,7 +71,7 @@ def account_management(page: ft.Page, role, audio1, audio2):
                         ft.DataCell(ft.Text(str(user[4]), color="white")),  # Level
                         # ft.DataCell(ft.Text(user[6], color="white")),  # Role
                         ft.DataCell(ft.Text(str(user[5]), color="white")),  # Registered Date
-                        ft.DataCell(ft.Text(time_ago(user[6]), color="white")),  # Last Login
+                        ft.DataCell(ft.Text(time_ago(user[-1]), color="white")),  # Last Login
                         ft.DataCell(
                             ft.Row(
                                 [
@@ -136,7 +139,7 @@ def account_management(page: ft.Page, role, audio1, audio2):
     scrollable_table = ft.Container(
         content=ft.ListView(
             controls=[table],
-            height=400,  # Adjust height as needed
+            height=500,
         ),
         alignment=ft.alignment.center,
     )
