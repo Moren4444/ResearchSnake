@@ -636,7 +636,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             pb.visible = False
             top_row.spacing = 68
         current_q_index = 0
-
+        print(chapter_quizzes)
         for i in chapter_quizzes[selected_chapter_index]:
             if int(i[3]) == selected_index and int(i[4][3:]) == selected_chapter_index:
                 quiz_name.value = i[1]
@@ -695,7 +695,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     def Add_Quiz(e):
         lvl = len(chapter_quizzes[selected_chapter_index]) + 1
         get_id = Add_QuizLVL(lvl, f"CHA{selected_chapter_index:02d}")
-        new_quiz = (f"QIZ{get_id:02d}", "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
+        new_quiz = (get_id, "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
         chapter_quizzes[selected_chapter_index].append(new_quiz)
 
         options_list.clear()
@@ -882,7 +882,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         chapter_snack = ft.SnackBar(ft.Text(f"A new chapter has been added", color="#FFFFFF",
                                             weight=ft.FontWeight.BOLD), duration=1500, bgcolor="#242323")
         quiz_id = Add_QuizLVL(1, chap_id)
-        chapter_quizzes[int(chap_id[3:])] = [(f"QIZ{quiz_id:02d}", "Quiz Name", "Description", 1, chap_id)]
+        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
 
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
@@ -953,7 +953,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         top_row.spacing = 68
         chap_id = Add_ChapterDB()
         quiz_id = Add_QuizLVL(1, chap_id)
-        chapter_quizzes[int(chap_id[3:])] = [(f"QIZ{quiz_id:02d}", "Quiz Name", "Description", 1, chap_id)]
+        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
         print(chapter_quizzes)
