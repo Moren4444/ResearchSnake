@@ -927,7 +927,7 @@ class RedPanda:
             print("What do we have here: ", e)
 
     def handle_click(self, mouse_pos):
-        if not pygame.Rect(self.x, 824, 120, 120).collidepoint(mouse_pos):
+        if not pygame.Rect(self.x, 820, 150, 150).collidepoint(mouse_pos):
             return
         # record where we clicked so MOVE can use it
         self.click_x = mouse_pos[0]
