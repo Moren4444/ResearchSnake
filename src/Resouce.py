@@ -443,9 +443,9 @@ class Keyboard_Writing:
         self.text = ""
         self.text2 = ""  # Text for the second input
         self.font = font(30)
-        self.scale = 2.3
+        self.scale = [2.8, 1.25]
         self.max_length = max_length
-        self.overlay = pygame.Surface((1280, 800), pygame.SRCALPHA)  # Enable per-pixel alpha
+        self.overlay = pygame.Surface((1600, 1000), pygame.SRCALPHA)  # Enable per-pixel alpha
         self.overlay_rect = self.overlay.get_rect(topleft=(0, 0))
         self.txt_surface = self.font.render(self.placeholder, True, (255, 255, 255))
         self.screen = screen
@@ -454,16 +454,20 @@ class Keyboard_Writing:
         self.shake = True
         self.frame_timer = 0
         self.last_update_time = 0
-        self.input_x = (self.screen.get_width() - 271 * self.scale) / 2 + (241 * self.scale - 420) / 2
-        self.input_y = (self.screen.get_height() - 151 * self.scale) / 2 + 70
-        self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
-        self.proceed_button = [pygame.Rect((755, 479, 145, 62)), "Password Change"]
+        self.input_x = (self.screen.get_width() - 271 * 3) / 2 + (241 * 1.8 - 420) / 2
+        self.input_y = (self.screen.get_height() - 151 * 2.8) / 2
+        self.input_rect = pygame.Rect(self.input_x * self.scale[1], self.input_y * self.scale[1],
+                                      (380 - self.textfield_width) * self.scale[1], 50 * self.scale[1])
+        self.proceed_button = [pygame.Rect((755 * self.scale[1], 479 * self.scale[1],
+                                            145 * self.scale[1], 62 * self.scale[1])), "Password Change"]
         self.x = 0
         self.x2 = 0  # Cursor position for input2
         self.open_overlay = False
         self.otp_start_time = None  # Initialized once
-        self.input_1 = pygame.Rect(self.input_x, self.input_y, 380, 50)
-        self.input_2 = pygame.Rect(self.input_x, self.input_y + 70, 380, 50)
+        self.input_1 = pygame.Rect(self.input_x * self.scale[1], self.input_y * self.scale[1],
+                                   380 * self.scale[1], 50 * self.scale[1])
+        self.input_2 = pygame.Rect(self.input_x * self.scale[1], (self.input_y + 70) * self.scale[1],
+                                   380 * self.scale[1], 50 * self.scale[1])
         self.remaining = 60
         self.pw_mask = False
         self.verification = False
@@ -473,13 +477,14 @@ class Keyboard_Writing:
     def container(self):
         self.overlay.fill((0, 0, 0, 130))
         self.screen.blit(self.overlay, (0, 0))
-        pygame.draw.rect(self.screen, (69, 69, 69), ((self.screen.get_width() - 241 * self.scale) / 2,
-                                                     (self.screen.get_height() - 151 * self.scale) / 2,
-                                                     241 * self.scale,
-                                                     151 * self.scale), border_radius=4)
+        pygame.draw.rect(self.screen, (69, 69, 69), ((self.screen.get_width() - 241 * self.scale[0]) / 2,
+                                                     (self.screen.get_height() - 151 * self.scale[0]) / 2,
+                                                     241 * self.scale[0],
+                                                     151 * self.scale[0]), border_radius=4)
         pygame.draw.rect(self.screen, (0, 131, 96), self.proceed_button[0], border_radius=4)
-        proceed = font(20).render(self.proceed_txt, True, (255, 255, 255))
-        self.screen.blit(proceed, (755 + (145 - proceed.get_width()) / 2, 479 + (62 - proceed.get_height()) / 2))
+        proceed = font(23).render(self.proceed_txt, True, (255, 255, 255))
+        self.screen.blit(proceed, (943.75 + (181.25 - proceed.get_width()) / 2,
+                                   598.75 + (77.5 - proceed.get_height()) / 2))
 
     def bar_shake(self, x=0, y=0):
         current_time = pygame.time.get_ticks()
@@ -539,16 +544,17 @@ class Keyboard_Writing:
         self.txt_surface = self.font.render(display_text, True, color)
 
     def handle_click(self, mouse_pos):
-        container_box = pygame.Rect(((self.screen.get_width() - 241 * self.scale) / 2,
-                                     (self.screen.get_height() - 151 * self.scale) / 2,
-                                     241 * self.scale,
-                                     151 * self.scale))
+        container_box = pygame.Rect(((self.screen.get_width() - 241 * self.scale[0]) / 2,
+                                     (self.screen.get_height() - 151 * self.scale[0]) / 2,
+                                     241 * self.scale[0],
+                                     151 * self.scale[0]))
 
         if not container_box.collidepoint(mouse_pos):
             self.open_overlay = False
             self.proceed_button[1] = "Password Change"
             self.textfield_width = 0
-            self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
+            self.input_rect = pygame.Rect(self.input_x * self.scale[1], self.input_y * self.scale[1],
+                                          (380 - self.textfield_width) * self.scale[1], 50 * self.scale[1])
             self.otp_start_time = None
             self.clear()
             self.x = 0
@@ -613,7 +619,7 @@ class Keyboard_Writing:
         elif self.proceed_button[1] == "OTP":
             # Check if OTP is being clicked
             try:
-                otp_rect = pygame.Rect(400, 412, 70, 20)
+                otp_rect = pygame.Rect(400 * self.scale[1], 412 * 1.2, 72, 22)
                 # This should match your blit position and approximate text size
                 if otp_rect.collidepoint(mouse_pos):
                     self.pin = otp(self.gmail + "@gmail.com")
@@ -622,12 +628,13 @@ class Keyboard_Writing:
             except Exception as e:
                 print("Error: ", e)
         elif self.proceed_button[1] == "Password Change":
-            forgot_pass = pygame.Rect(400, 412, 185, 20)
+            forgot_pass = pygame.Rect(400 * self.scale[1], 400 * self.scale[1], 185, 20)
             if forgot_pass.collidepoint(mouse_pos):
                 self.active_input = 1
                 self.pw_mask = True
                 self.clear()
-                self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
+                self.input_rect = pygame.Rect(self.input_x * self.scale[1], self.input_y * self.scale[1],
+                                              (380 - self.textfield_width) * self.scale[1], 50 * self.scale[1])
                 self.x = 0
                 self.proceed_button[1] = "Gmail"
                 return
@@ -644,10 +651,10 @@ class Keyboard_Writing:
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
         forgot_password = font(20).render("Forgot Password?", True, (255, 255, 255))
-        self.screen.blit(self.error_label, (400, 372))
-        self.screen.blit(forgot_password, (400, 412))
-        self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
-        self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
+        self.screen.blit(self.error_label, (400 * self.scale[1], 360 * self.scale[1]))
+        self.screen.blit(forgot_password, (400 * self.scale[1], 400 * self.scale[1]))
+        self.screen.blit(self.txt_surface, ((self.input_x + 10) * self.scale[1], (self.input_y + 5) * self.scale[1]))
+        self.bar_shake((self.input_x + 10 + self.get_x()) * self.scale[1], (self.input_y + 5) * self.scale[1])
 
     def _drawGmail(self):
         self.container()
@@ -655,31 +662,33 @@ class Keyboard_Writing:
         self.pw_mask = False
         self.proceed_button[1] = "Gmail"
         gmail = font(20).render("@Gmail.com", True, (255, 255, 255))
-        self.screen.blit(gmail, (783, 315))
+        self.screen.blit(gmail, (783 * self.scale[1], 315 * self.scale[1]))
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
-        self.screen.blit(self.error_label, (400, 372))
-        self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
-        self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
+        self.screen.blit(self.error_label, (400 * self.scale[1], 372 * self.scale[1]))
+        self.screen.blit(self.txt_surface, ((self.input_x + 10) * self.scale[1], (self.input_y + 5) * self.scale[1]))
+        self.bar_shake((self.input_x + 10 + self.get_x()) * self.scale[1], (self.input_y + 5) * self.scale[1])
 
     def _drawOTP(self):
         self.container()
         self.proceed_txt = "Proceed"
         self.proceed_button[1] = "OTP"
+        self.max_length = 10
         self.pw_mask = False
         self.textfield_width = 200
-        self.input_rect = pygame.Rect(self.input_x, self.input_y, 380 - self.textfield_width, 50)
+        self.input_rect = pygame.Rect(self.input_x * self.scale[1], self.input_y * self.scale[1],
+                                      (380 - self.textfield_width) * self.scale[1], 50 * self.scale[1])
         if self.otp_start_time is None:
             self.otp_start_time = pygame.time.get_ticks()
         self.remaining = countdown(self.otp_start_time)  # Use stored start time
-        self.Otp = font(20).render(f"OTP {self.remaining if self.remaining > 0 else 'Resend'}",
+        self.Otp = font(22).render(f"OTP {self.remaining if self.remaining > 0 else 'Resend'}",
                                    True, (255, 255, 255))
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
-        self.screen.blit(self.error_label, (400, 372))
-        self.bar_shake(self.input_x + 10 + self.get_x(), self.input_y + 5)
-        self.screen.blit(self.txt_surface, (self.input_x + 10, self.input_y + 5))
-        self.screen.blit(self.Otp, (400, 412))
+        self.screen.blit(self.error_label, (400 * self.scale[1], 372 * 1.2))
+        self.bar_shake((self.input_x + 10 + self.get_x()) * self.scale[1], (self.input_y + 5) * self.scale[1])
+        self.screen.blit(self.txt_surface, ((self.input_x + 10) * self.scale[1], (self.input_y + 5) * self.scale[1]))
+        self.screen.blit(self.Otp, (400 * self.scale[1], 412 * 1.2))
 
     def _drawChange(self):
         self.container()
@@ -705,7 +714,7 @@ class Keyboard_Writing:
         display_text2 = "*" * len(self.text2) if self.pw_mask and self.text2 else self.placeholder2
         color2 = (255, 255, 255) if self.text2 else (200, 200, 200)
         txt_surface2 = self.font.render(display_text2, True, color2)
-        self.screen.blit(self.error_label, (400, 442))
+        self.screen.blit(self.error_label, (400 * self.scale[1], 442 * self.scale[1]))
         self.screen.blit(txt_surface2, (self.input_2.x + 10, self.input_2.y + 5))
         # Draw cursor if active
         if self.active_input == 2:
