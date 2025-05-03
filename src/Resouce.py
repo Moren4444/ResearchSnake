@@ -649,9 +649,9 @@ class Keyboard_Writing:
         self.pw_mask = True
         self.proceed_button[1] = "Password Change"
         self.placeholder = "Password"
-        self.text = "*" * len(self.text) if self.pw_mask and self.text else self.placeholder
+        self.test = "*" * len(self.text) if self.pw_mask and self.text else self.placeholder
         color1 = (255, 255, 255) if self.text else (200, 200, 200)
-        self.txt_surface1 = self.font.render(self.text, True, color1)
+        self.txt_surface1 = self.font.render(self.test, True, color1)
         pygame.draw.rect(self.screen, (0, 0, 0), self.input_rect, border_radius=4)
         pygame.draw.rect(self.screen, (244, 244, 244), self.input_rect, width=3, border_radius=4)
         forgot_password = font(20).render("Forgot Password?", True, (255, 255, 255))
