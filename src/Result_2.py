@@ -49,23 +49,24 @@ def streak(user_answer):
 
 
 def result(chapter_info, user_answer, resource_path, return_menu, player_info):
+    scale = 1.25
+
     def Arrow(direction, position, color="blue", push=""):
         if push == "":
             path = resource_path(f"assets/MV_Icons_Letter_Buttons/Buttons/{color}-!arrow{direction}{push}.png")
         else:
             path = resource_path(f"assets/MV_Icons_Letter_Buttons/Buttons/{color}-!arrow{direction}-{push}.png")
         arrows = pygame.image.load(path)
-        arrows = pygame.transform.scale(arrows, (32 * 2, 32 * 2))
+        arrows = pygame.transform.scale(arrows, (32 * 2 * scale, 32 * 2 * scale))
         return [arrows, arrows.get_rect(topleft=position)]
     print(chapter_info, user_answer, player_info)
     running = True
-    font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 20)
+    font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 25)
     sec_font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 30)
-    third_font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 40)
+    third_font = pygame.font.Font(resource_path("assets/PeaberryBase.ttf"), 45)
     screen = pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
     proceed_text = sec_font.render("PROCEED", True, (255, 255, 255))
-    scale = 2
-    proceed_button = pygame.Rect(1039, 658, 99 * scale, 38 * scale)
+    proceed_button = pygame.Rect(scale * 1039, scale * 658, 158.4 * scale, 60 * scale)
 
     list_of_answer = []
     for index, i in enumerate(Retrieve_Question(chapter_info[0][3:], "CorrectAnswer")):
@@ -93,8 +94,8 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
     while running:
         screen.fill((52, 52, 52))
         mouse_pos = pygame.mouse.get_pos()  # Get mouse position
-        right = Arrow("right", (588, 710), push=Push_r)
-        left = Arrow("left", (75, 710), push=Push_l)
+        right = Arrow("right", (588 * scale, 710 * scale), push=Push_r)
+        left = Arrow("left", (75 * scale, 710 * scale), push=Push_l)
 
         # Calculate current page indices and arrow visibility
         start_idx = current_page * questions_per_page
@@ -125,7 +126,8 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                     Push_l = ""
         loc = font.render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
         screen.blit(loc, (1100, 0))
-        pygame.draw.rect(screen, (39, 70, 68), (100, 40, 873, 698), border_radius=7)
+        pygame.draw.rect(screen, (39, 70, 68), (100 * scale, 40 * scale,
+                                                873 * scale, 698 * scale), border_radius=7)
         for i in range(start_idx, end_idx):
             position_in_page = i - start_idx
 
@@ -139,9 +141,9 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                 char_index_answer[i] += 1
                 display_answer[i] = list_of_answer[i][:char_index_answer[i]]
 
-            wrapped_lines = wrap_text_word_based(displayed_text[i], 770, font)
+            wrapped_lines = wrap_text_word_based(displayed_text[i], 770 * scale, font)
             base_y_offset = 100
-            answer_wrap = wrap_text_word_based(display_answer[i], 770, font)
+            answer_wrap = wrap_text_word_based(display_answer[i], 770 * scale, font)
 
             # Render the question
             for j, line in enumerate(wrapped_lines):
@@ -152,10 +154,10 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                     line_to_render = line
                 text_surface = font.render(line_to_render, True, (255, 255, 255))
                 # Each wrapped line beyond the first gets an extra y-offset of 30 pixels.
-                screen.blit(text_surface, (150, base_y_offset + (position_in_page * 137.7) + (j * 30)))
+                screen.blit(text_surface, (150 * scale, scale * (base_y_offset + (position_in_page * 137.7) + (j * 30))))
 
             # Calculate the y-offset for the answer based on the number of lines in the question
-            answer_y_offset = base_y_offset + (position_in_page * 137.7) + (len(wrapped_lines) * 30)
+            answer_y_offset = scale * (base_y_offset + (position_in_page * 137.7) + (len(wrapped_lines) * 30))
 
             # Render the answer
             for j, line in enumerate(answer_wrap):
@@ -165,17 +167,16 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                     text_surface = font.render(line, True, (255, 0, 0))
 
                 # Each wrapped line beyond the first gets an extra y-offset of 20 pixels.
-                screen.blit(text_surface, (150, answer_y_offset + (j * 20)))
+                screen.blit(text_surface, (scale * 150, answer_y_offset + (j * 20)))
             if show_right:
-                screen.blit(right[0], (588, 710))
+                screen.blit(right[0], (scale * 588, scale * 710))
             if show_left:
-                screen.blit(left[0], (75, 710))
+                screen.blit(left[0], (scale * 75, scale * 710))
 
-        screen.blit(Streak, (1056, 328))
-        pygame.draw.rect(screen, (24, 33, 199), (1039, 658, 99 * scale, 38 * scale)
-                         , border_radius=8)
-        screen.blit(proceed_text, (1039 + (99 * scale - proceed_text.get_width())/2,
-                                   658 + (38 * scale - proceed_text.get_height())/2))
+        screen.blit(Streak, (scale * 1056, scale * 328))
+        pygame.draw.rect(screen, (24, 33, 199), proceed_button, border_radius=8)
+        screen.blit(proceed_text, (scale * 1039 + (158.4 * scale - proceed_text.get_width())/2,
+                                   scale * 658 + (60 * scale - proceed_text.get_height())/2))
         pygame.display.update()
         time.sleep(0.02)
         clock.tick(60)

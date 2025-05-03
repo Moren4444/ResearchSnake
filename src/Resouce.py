@@ -16,32 +16,39 @@ class Option:
     def __init__(self, resource_path):
         # Load button images
         self.blue_A = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/blue-A.png"))
+        self.blue_A_scale = pygame.transform.scale(self.blue_A, (32 * 1.25, 32 * 1.25))
         self.blue_A_push = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/blue-A-pushed.png"))
+        self.blue_A_push_scale = pygame.transform.scale(self.blue_A_push, (32 * 1.25, 32 * 1.25))
 
         self.green_B = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/green-B.png"))
+        self.green_B_scale = pygame.transform.scale(self.green_B, (32 * 1.25, 32 * 1.25))
         self.green_B_push = pygame.image.load(
             resource_path("assets/MV_Icons_Letter_Buttons/Buttons/green-B-pushed.png"))
+        self.green_B_push_scale = pygame.transform.scale(self.green_B_push, (32 * 1.25, 32 * 1.25))
 
         self.red_C = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/red-C.png"))
+        self.red_C_scale = pygame.transform.scale(self.red_C, (32 * 1.25, 32 * 1.25))
         self.red_C_push = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/red-C-pushed.png"))
+        self.red_C_push_scale = pygame.transform.scale(self.red_C_push, (32 * 1.25, 32 * 1.25))
 
         self.yellow_D = pygame.image.load(resource_path("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D.png"))
+        self.yellow_D_scale = pygame.transform.scale(self.yellow_D, (32 * 1.25, 32 * 1.25))
         self.yellow_D_push = pygame.image.load(
             resource_path("assets/MV_Icons_Letter_Buttons/Buttons/yellow-D-pushed.png"))
-
+        self.yellow_D_scale_push = pygame.transform.scale(self.yellow_D_push, (32 * 1.25, 32 * 1.25))
         used_positions = set()
 
         self.buttons = []
         for button_info in [
-            {"image": self.blue_A, "pushed_image": self.blue_A_push, "name": "A"},
-            {"image": self.green_B, "pushed_image": self.green_B_push, "name": "B"},
-            {"image": self.red_C, "pushed_image": self.red_C_push, "name": "C"},
-            {"image": self.yellow_D, "pushed_image": self.yellow_D_push, "name": "D"},
+            {"image": self.blue_A_scale, "pushed_image": self.blue_A_push_scale, "name": "A"},
+            {"image": self.green_B_scale, "pushed_image": self.green_B_push_scale, "name": "B"},
+            {"image": self.red_C_scale, "pushed_image": self.red_C_push_scale, "name": "C"},
+            {"image": self.yellow_D_scale, "pushed_image": self.yellow_D_scale_push, "name": "D"},
         ]:
             while True:
                 # Generate a random position
-                x = random.randrange(680, 1020, 40)
-                y = random.randrange(92, 692, 40)
+                x = random.randrange(int(680 * 1.25), int(1020 * 1.25), int(40 * 1.25))
+                y = random.randrange(int(92 * 1.25), int(692 * 1.25), int(40 * 1.25))
                 position = (x, y)
 
                 # Check if the position is already used
@@ -88,8 +95,8 @@ class Option:
         used_positions = set()
         for button in self.buttons:
             while True:
-                x = random.randrange(680, 1020, 40)
-                y = random.randrange(92, 692, 40)
+                x = random.randrange(int(680 * 1.25), int(1020 * 1.25), int(40 * 1.25))
+                y = random.randrange(int(92 * 1.25), int(692 * 1.25), int(40 * 1.25))
                 position = (x, y)
                 if position not in used_positions:
                     used_positions.add(position)
@@ -161,32 +168,31 @@ class Profile:
         self.easy = resource_path("assets/Difficulties_Icons/Easy.png")
         self.medium = resource_path("assets/Difficulties_Icons/Medium.png")
         self.hard = resource_path("assets/Difficulties_Icons/Hard.png")
-        self.scale = 2.3
+        self.scale = 2.7
         self.name = font(30).render(str(self.student_info[1]), True, (255, 255, 255))
         self.quiz = font(30).render(str(self.student_info[4]), True, (255, 255, 255))
         self.y_offset = [50 * self.scale, 48 * self.scale]
         self.x_offset = 70 * self.scale
         self.list_records = []
-        self.overlay = pygame.Surface((1280, 800), pygame.SRCALPHA)  # Enable per-pixel alpha
+        self.overlay = pygame.Surface((1600, 1000), pygame.SRCALPHA)  # Enable per-pixel alpha
         self.overlay_rect = self.overlay.get_rect(topleft=(0, 0))
         self.Timestamp_col = font(20).render("Time Taken", True, (0, 0, 0))
         self.scroll_offset = 0
         self.max_scroll = 0
         self.Logout = pygame.image.load(resource_path("assets/icons/cHedrNavLogoutBtn.png"))
         self.Logout_resize = pygame.transform.scale(self.Logout, (64, 64))
-        self.logout_rect = self.Logout_resize.get_rect(topleft=(1005, 113))
+        self.logout_rect = self.Logout_resize.get_rect(topleft=(1254, 177))
         self.open_profile = [False, False]
         self.list_avatar = []
-        self.img = load()["img"] if os.path.exists(resource_path("user_credentials.json")) else None
-        print(self.img)
+        self.img = load()["img"] if os.path.exists("user_credentials.json") else None
         self.history_rect = pygame.Rect(
             (self.screen.get_width() - 401 * self.scale) / 2,
             120 * self.scale + 100,
             401 * self.scale,
             153 * self.scale
         )
-        self.change_rect = pygame.Rect(872, 221, 225, 50)
-        self.center = ((self.screen.get_width() - 336.44 * self.scale) / 2, 90 * self.scale)
+        self.change_rect = pygame.Rect(1104, 274, 225, 50)
+        self.center = ((self.screen.get_width() - 329.44 * self.scale) / 2, 97 * self.scale)
         self.profile_rect = pygame.Rect(
             self.center[0] - 64.56,
             self.center[1] - 64.56,
@@ -195,8 +201,11 @@ class Profile:
         )
 
     def handle_click(self, mouse_pos):
-        profile_box = pygame.Rect(120, 81, 1157 - 120, 738 - 81)
-        select_box = pygame.Rect(333, 261, 661, 343)
+        profile_box = pygame.Rect((self.screen.get_width() - 450 * self.scale) / 2,
+                                  (self.screen.get_height() - 275 * self.scale) / 2,
+                                  450 * self.scale,
+                                  285 * self.scale)
+        select_box = pygame.Rect((self.screen.get_width() - 661) / 2, (self.screen.get_height() - 343) / 2, 661, 343)
         if self.overlay_rect.collidepoint(mouse_pos):
             if self.open_profile[1]:
                 if not select_box.collidepoint(mouse_pos):
@@ -214,7 +223,7 @@ class Profile:
                     update = load()
                     update["img"] = f"Pic{index + 1}.png"
                     self.img = update["img"]
-                    with open(resource_path("user_credentials.json"), "w") as file:
+                    with open("user_credentials.json", "w") as file:
                         json.dump(update, file)
                     return
 
@@ -269,20 +278,21 @@ class Profile:
             icons = pygame.image.load(difficulty_icon_path)
             icon_y = container_center_y - (30 * self.scale / 2)
             d_icons = pygame.transform.scale(icons, (70, 70))
-            self.screen.blit(d_icons, (35.72 * self.scale + 169,
+            self.screen.blit(d_icons, (65.72 * self.scale + 169,
                                        icon_y))
 
-            self.screen.blit(level, (121.28 * self.scale + 162, level_y))
-            self.screen.blit(questions, (121.28 * self.scale + (self.x_offset * 1) + 165 + spacing(len(results)),
+            self.screen.blit(level, (130.28 * self.scale + 206, level_y))
+            self.screen.blit(questions, (130.28 * self.scale + (self.x_offset * 1) + 205 + spacing(len(results)),
                                          questions_y))
-            self.screen.blit(correct, (121.28 * self.scale + (self.x_offset * 2) + 169 + spacing(count),
+            self.screen.blit(correct, (130.28 * self.scale + (self.x_offset * 2) + 219 + spacing(count),
                                        correct_y))
-            self.screen.blit(timestamp, (876 + (137 - timestamp.get_width()) / 2, timestamp_y))
+            self.screen.blit(timestamp, (1070 + (137 - timestamp.get_width()) / 2, timestamp_y))
 
     def select_avatar(self):
         self.overlay.fill((0, 0, 0, 130))
         self.screen.blit(self.overlay, (0, 0))
-        pygame.draw.rect(self.screen, (69, 69, 69), (333, 261, 661, 343))
+        pygame.draw.rect(self.screen, (69, 69, 69), ((self.screen.get_width() - 661) / 2,
+                                                     (self.screen.get_height() - 343) / 2, 661, 343))
         # Path to image folder
         try:
             image_folder = resource_path("assets/Avatar/")
@@ -315,8 +325,8 @@ class Profile:
 
             # Display all images in a row
             for index, img in enumerate(all_pics):
-                self.list_avatar.append(pygame.Rect(382 + index * 130, 306, 90, 90))
-                self.screen.blit(img, (382 + index * 130, 306))
+                self.list_avatar.append(pygame.Rect(515 + index * 130, 396, 90, 90))
+                self.screen.blit(img, (515 + index * 130, 396))
         except Exception as e:
             print("What: ", e)
 
@@ -327,10 +337,9 @@ class Profile:
                                                      (self.screen.get_height() - 275 * self.scale) / 2,
                                                      450 * self.scale,
                                                      285 * self.scale), border_radius=4)
-        self.screen.blit(self.name, (155 * self.scale, 65 * self.scale))
-        Logout = pygame.image.load(resource_path("assets/icons/cHedrNavLogoutBtn.png"))
-        Logout_resize = pygame.transform.scale(Logout, (64, 64))
-        self.screen.blit(Logout_resize, (1005, 113))
+        self.screen.blit(self.name, (170 * self.scale, 74 * self.scale))
+
+        self.screen.blit(self.Logout_resize, (1254, 177))
         if bool(self.img):
             try:
                 full_path = resource_path(f"assets/Avatar/{self.img}")
@@ -345,11 +354,11 @@ class Profile:
                 # Apply mask to the resized image
                 circular_image = resized_image.copy()
                 circular_image.blit(mask_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-                self.screen.blit(circular_image, (206, 166))
+                self.screen.blit(circular_image, (289, 196))
             except Exception as e:
                 print("What is: ", e)
         else:
-            pygame.draw.circle(self.screen, (217, 217, 217), (253.904, 207), 64.56)
+            pygame.draw.circle(self.screen, (217, 217, 217), (self.center[0], self.center[1]), 64.56)
         # Header container
         pygame.draw.rect(self.screen, (126, 122, 122), ((self.screen.get_width() - 401 * self.scale) / 2,
                                                         93 * self.scale + 100,
@@ -357,8 +366,8 @@ class Profile:
 
         pygame.draw.rect(self.screen, (0, 131, 96), self.change_rect, border_radius=2)
         change_password = font(20).render("Change Password", True, (255, 255, 255))
-        self.screen.blit(change_password, (872 + (225 - change_password.get_width()) / 2,
-                                           221 + (50 - change_password.get_height()) / 2))
+        self.screen.blit(change_password, (1104 + (225 - change_password.get_width()) / 2,
+                                           274 + (50 - change_password.get_height()) / 2))
         # History container
         pygame.draw.rect(self.screen, (126, 122, 122), self.history_rect, border_radius=4)
         # Set clipping area
@@ -369,16 +378,16 @@ class Profile:
         self.records()
         self.screen.set_clip(None)
 
-        difficulties = font(20).render("Difficulties", True, (0, 0, 0))
-        Level = font(20).render("Level", True, (0, 0, 0))
-        Questions = font(20).render("Questions", True, (0, 0, 0))
-        Correct = font(20).render("Correct", True, (0, 0, 0))
+        difficulties = font(22).render("Difficulties", True, (0, 0, 0))
+        Level = font(22).render("Level", True, (0, 0, 0))
+        Questions = font(22).render("Questions", True, (0, 0, 0))
+        Correct = font(22).render("Correct", True, (0, 0, 0))
 
-        self.screen.blit(difficulties, (30 * self.scale + 165, 96 * self.scale + 100))
-        self.screen.blit(Level, (110 * self.scale + 165, 96 * self.scale + 100))
-        self.screen.blit(Questions, (165 * self.scale + 165, 96 * self.scale + 100))
-        self.screen.blit(Correct, (243 * self.scale + 165, 96 * self.scale + 100))
-        self.screen.blit(self.Timestamp_col, (307 * self.scale + 165, 96 * self.scale + 100))
+        self.screen.blit(difficulties, (54 * self.scale + 182, 98 * self.scale + 100))
+        self.screen.blit(Level, (134 * self.scale + 182, 98 * self.scale + 100))
+        self.screen.blit(Questions, (189 * self.scale + 182, 98 * self.scale + 100))
+        self.screen.blit(Correct, (267 * self.scale + 182, 98 * self.scale + 100))
+        self.screen.blit(self.Timestamp_col, (331 * self.scale + 182, 98 * self.scale + 100))
 
         self.draw_scrollbar()
 
@@ -733,7 +742,7 @@ class Keyboard_Writing:
 
 
 def load_image():
-    with open(resource_path("Red_Panda_Sprite_Sheet.json"), "r") as file:
+    with open("Red_Panda_Sprite_Sheet.json", "r") as file:
         return json.load(file)
 
 
@@ -762,7 +771,7 @@ class RedPanda:
         self.last_update_time = pygame.time.get_ticks()
         self.loop = 6
         self.frame_duration = 130  # milliseconds per frame
-        self.sprite_sheet_orig = pygame.image.load(resource_path("Assets/Red Panda Sprite Sheet.png"))
+        self.sprite_sheet_orig = pygame.image.load(resource_path("assets/Red Panda Sprite Sheet.png"))
         self.sprite_sheet_flip = pygame.transform.flip(self.sprite_sheet_orig, True, False)
         self.sprite_sheet_active = self.sprite_sheet_orig
         self.reverse_frames = False
@@ -816,12 +825,13 @@ class RedPanda:
                 self.frames.append(frame_data)
         else:
             if self.loop > 6:
-                for i in range(self.loop -1, -1, -1):  # 6 idle frames
+                for i in range(self.loop - 1, -1, -1):  # 6 idle frames
                     frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {i}.ase"]["frame"]
                     self.frames.append(frame_data)
             else:
                 for i in range(1, 7):
-                    frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {8 - i}.ase"]["frame"]
+                    frame_data = self.load["frames"][f"Red Panda Sprite Sheet ({self.get_status()}) {8 - i}.ase"][
+                        "frame"]
                     self.frames.append(frame_data)
 
     def _update(self):
@@ -904,7 +914,7 @@ class RedPanda:
             print("What do we have here: ", e)
 
     def handle_click(self, mouse_pos):
-        if not pygame.Rect(self.x, 650, 120, 120).collidepoint(mouse_pos):
+        if not pygame.Rect(self.x, 824, 120, 120).collidepoint(mouse_pos):
             return
         # record where we clicked so MOVE can use it
         self.click_x = mouse_pos[0]
@@ -917,7 +927,7 @@ class RedPanda:
         frame = self.frames[self.current_frame]
         rect = pygame.Rect(frame["x"], frame["y"], frame["w"], frame["h"])
         img = self.sprite_sheet_active.subsurface(rect)
-        img = pygame.transform.scale(img, (120, 120))
+        img = pygame.transform.scale(img, (150, 150))
         screen.blit(img, (self.x, self.y))
 
     def reset(self):
@@ -942,7 +952,7 @@ class RedPanda:
 
 
 class Background:
-    def __init__(self, path, size=(1280, 800)):
+    def __init__(self, path, size=(1600, 1000)):
         self.gif = Image.open(resource_path(path))
         self.frames = []
         self.size = size  # Desired output size

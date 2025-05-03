@@ -24,7 +24,7 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
     Chapter = small_font.render(f"Chapter {int(chapter_info[-2][3:])}", True, (0, 0, 0))
     background = Background("assets/Menu.gif")
     last_update_time = pygame.time.get_ticks()
-    scale = 2.8764
+    scale = 3.5764
 
     Easy_rect = pygame.Rect(63 * scale, 169 * scale, 102 * scale, 44 * scale)
     Medium_rect = pygame.Rect(172 * scale, 169 * scale, 102 * scale, 44 * scale)
@@ -135,9 +135,12 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
             pygame.draw.rect(screen, (0, 0, 0), (281 * scale, 169 * scale, 102 * scale, 44 * scale), width=5)
 
         pygame.draw.rect(screen, (30, 218, 140), (369 * scale, 234 * scale, 60 * scale, 27 * scale), border_radius=8)
-        screen.blit(Easy, (88 * scale, 180 * scale))
-        screen.blit(Medium, (186 * scale, 180 * scale))
-        screen.blit(Hard, (305 * scale, 180 * scale))
+        screen.blit(Easy, ((63 * scale) + (102 * scale - Easy.get_width())/2,
+                           (169 * scale) + (44 * scale - Easy.get_height())/2))
+        screen.blit(Medium, ((172 * scale) + (102 * scale - Medium.get_width())/2,
+                             (169 * scale) + (44 * scale - Medium.get_height())/2))
+        screen.blit(Hard, ((281 * scale) + (102 * scale - Hard.get_width())/2,
+                           (169 * scale) + (44 * scale - Hard.get_height())/2))
 
         screen.blit(Start, (378 * scale, 242 * scale))
         current_time = pygame.time.get_ticks()

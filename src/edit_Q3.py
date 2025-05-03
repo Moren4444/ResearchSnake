@@ -1,11 +1,116 @@
+import asyncio
 import os
+import random
 import sys
+import threading
 
 import flet as ft
+import pyautogui
+import websockets
+
 from database import (Retrieve_Question, Chapter_Quiz, Update_Question, Delete_Question, Add_Question, Add_QuizLVL,
                       Delete_QuizLVL, Delete_All, Update_title, Add_ChapterDB, Delete_Chapter, select)
 import json
 from admin import AdminPage
+H_OFFSET = 8
+V_OFFSET = 31
+DPI_SCALE = 1.25  # Adjust this according to your display scaling
+
+cursor_containers = {}  # { client_id: ft.Container }
+client_colors = {}      # { client_id: str }
+
+
+def random_color():
+    return f"#{random.randint(0, 0xFFFFFF):06x}"
+
+
+async def websocket_client(page: ft.Page, stack: ft.Stack, get_current_chapter_quiz):
+    uri = "ws://localhost:8765"
+    my_client_id = None
+    current_chapter = 1  # Track locally
+    current_quiz = 1  # Track locally
+    try:
+        async with websockets.connect(uri) as ws:
+            async def sender():
+                nonlocal current_chapter, current_quiz
+
+                while True:
+                    x, y = pyautogui.position()
+                    current_chapter, current_quiz = get_current_chapter_quiz()
+                    await ws.send(json.dumps({
+                        "x": x,
+                        "y": y,
+                        "chapter": current_chapter,
+                        "quiz": current_quiz
+                    }))
+                    await asyncio.sleep(0.05)
+
+            async def receiver():
+                nonlocal my_client_id, current_chapter, current_quiz
+                async for message in ws:
+                    data = json.loads(message)
+                    if data["type"] == "id":
+                        my_client_id = data["id"]
+                        print(f"My client ID: {my_client_id}")
+                    elif data["type"] == "update":
+                        data = data["clients"]
+                        current_chapter, current_quiz = get_current_chapter_quiz()
+                        active_ids = set()
+
+                        for client in data:
+                            cid = client["id"]
+                            client_chapter = client["chapter"]
+                            client_quiz = client["quiz"]
+                            # Skip if not in same chapter/quiz
+                            if client_chapter != current_chapter or client_quiz != current_quiz:
+                                if cid in cursor_containers:
+                                    # Remove stale cursor
+                                    stack.controls.remove(cursor_containers[cid])
+                                    del cursor_containers[cid]
+                                    del client_colors[cid]
+                                continue
+                            if cid == my_client_id:
+                                continue  # ❌ Skip own cursor
+                            else:
+                                x = client["x"]
+                                y = client["y"]
+                                active_ids.add(cid)
+
+                                if cid not in client_colors:
+                                    client_colors[cid] = random_color()
+
+                                if cid not in cursor_containers:
+                                    container = ft.Container(
+                                        width=50,
+                                        height=50,
+                                        border_radius=30,
+                                        bgcolor=client_colors[cid],
+                                        left=0,
+                                        top=0,
+                                        animate_position=100
+                                    )
+                                    cursor_containers[cid] = container
+                                    stack.controls.append(container)
+
+                                # Update cursor position
+                                local_x = (x - H_OFFSET) / DPI_SCALE
+                                local_y = (y - V_OFFSET) / DPI_SCALE
+                                cursor_containers[cid].left = local_x - 25
+                                cursor_containers[cid].top = local_y - 25
+
+                        # ❗️Remove stale cursors
+                        for stale_id in list(cursor_containers.keys()):
+                            if stale_id not in active_ids:
+                                stack.controls.remove(cursor_containers[stale_id])
+                                del cursor_containers[stale_id]
+                                del client_colors[stale_id]
+
+                    page.update()
+
+            await asyncio.gather(sender(), receiver())
+
+    except Exception as e:
+        print(f"WebSocket error: {e}")
 
 
 def main(page: ft.Page, role, audio1, audio2, admin_Name):
@@ -377,16 +482,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         nonlocal current_q_index
         current_q_index = questions.index(question)
         quiz_id = selected_index
-        confirm_dialog = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Confirm Delete"),
-            content=ft.Text(f"Are you sure you want to delete this question?"),
-            actions=[
-                ft.TextButton("Yes", on_click=lambda e: confirm_delete(question)),
-                ft.TextButton("No", on_click=lambda e: close_delete_dialog(e)),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-        )
         dlg = ft.AlertDialog(
             title=ft.Text("Minimum 1 Question per Quiz!"),
             on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
@@ -398,7 +493,16 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         if len(chapter_quizzes[selected_chapter_index]) == 1 and len(questions) == 1:
             page.open(dlg)
             return
-
+        confirm_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Confirm Delete"),
+            content=ft.Text(f"Are you sure you want to delete this question?"),
+            actions=[
+                ft.TextButton("Yes", on_click=lambda e: confirm_delete(question)),
+                ft.TextButton("No", on_click=lambda e: close_delete_dialog(e)),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
         original_question = Retrieve_Question(quiz_id, "Question")[current_q_index]
         original_options = Retrieve_Question(quiz_id, "Option1, Option2, Option3, Option4")[current_q_index]
         original_answer = Retrieve_Question(quiz_id, "CorrectAnswer")[current_q_index]
@@ -514,6 +618,10 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     # Dropdown change handler
     def dropdown_changed(e):
         nonlocal selected_index, selected_chapter_index, current_q_index, question_id
+        for cid in list(cursor_containers.keys()):
+            stack.controls.remove(cursor_containers[cid])
+            del cursor_containers[cid]
+            del client_colors[cid]
         selected_chapter_index = int(chapter_dd.value.split()[-1])
         options_list.clear()
         for i in range(len(chapter_quizzes[selected_chapter_index])):
@@ -880,23 +988,27 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         ],
         alignment=ft.MainAxisAlignment.CENTER  # Center everything inside the Row
     )
+    stack = ft.Stack([
+        Hedr,
+        chapter_display,
+        # Cursors last (top visual layer)
+        *cursor_containers.values()
+    ], expand=True)
 
-    # Add main layout to page
-    # page.add(chapter_display)
+    def get_current_chapter_quiz():
+        """Returns tuple of (current_chapter, current_quiz)"""
+        nonlocal chapter_dd, dd
+        current_chapter = int(chapter_dd.value.split()[-1])
+        current_quiz = int(dd.value.split()[-1])
+        return current_chapter, current_quiz
 
-    # ✅ Call `update_column()` only AFTER the UI is loaded
-    def on_view_loaded(e):
-        if default_value:
-            update_column(options_list.index(default_value))
-
-    page.on_view_populated = on_view_loaded  # Run this after the page is loaded
-
+    # Start mouse tracking and websocket client
+    threading.Thread(target=lambda: asyncio.run(websocket_client(page, stack, get_current_chapter_quiz)), daemon=True).start()
     return ft.View(
         route="/edit_page",
         controls=[
+            stack,
             Admin.page.appbar,
-            Hedr,
-            chapter_display
         ],
         bgcolor="#514B4B",
     )
