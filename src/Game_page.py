@@ -256,16 +256,16 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                     screen.blit(D_selection, (85, 645))
 
                     if Question_title:
-                        game._animated_text(Option_title[questions][0],
+                        done1 = game._animated_text(Option_title[questions][0],
                                             font, 125, 353, 0, 422)
-                        game._animated_text(Option_title[questions][1],
+                        done2 = game._animated_text(Option_title[questions][1],
                                             font, 125, 444, 5, 422)
-                        game._animated_text(Option_title[questions][2],
+                        done3 = game._animated_text(Option_title[questions][2],
                                             font, 125, 538, 5, 422)
-                        done = game._animated_text(Option_title[questions][3],
+                        done4 = game._animated_text(Option_title[questions][3],
                                                    font, 125, 632, 5, 422)
 
-                        if not open_setting and done:
+                        if not open_setting and (done1 and done2 and done3 and done4):
                             # if not game.timer_started:
                             #     game.time_bar_start = pygame.time.get_ticks()  # Start timer here
                             #     game.timer_started = True
