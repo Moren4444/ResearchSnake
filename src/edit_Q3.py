@@ -377,16 +377,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         nonlocal current_q_index
         current_q_index = questions.index(question)
         quiz_id = selected_index
-        confirm_dialog = ft.AlertDialog(
-            modal=True,
-            title=ft.Text("Confirm Delete"),
-            content=ft.Text(f"Are you sure you want to delete this question?"),
-            actions=[
-                ft.TextButton("Yes", on_click=lambda e: confirm_delete(question)),
-                ft.TextButton("No", on_click=lambda e: close_delete_dialog(e)),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-        )
         dlg = ft.AlertDialog(
             title=ft.Text("Minimum 1 Question per Quiz!"),
             on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
@@ -398,7 +388,16 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         if len(chapter_quizzes[selected_chapter_index]) == 1 and len(questions) == 1:
             page.open(dlg)
             return
-
+        confirm_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Confirm Delete"),
+            content=ft.Text(f"Are you sure you want to delete this question?"),
+            actions=[
+                ft.TextButton("Yes", on_click=lambda e: confirm_delete(question)),
+                ft.TextButton("No", on_click=lambda e: close_delete_dialog(e)),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
         original_question = Retrieve_Question(quiz_id, "Question")[current_q_index]
         original_options = Retrieve_Question(quiz_id, "Option1, Option2, Option3, Option4")[current_q_index]
         original_answer = Retrieve_Question(quiz_id, "CorrectAnswer")[current_q_index]
@@ -514,6 +513,10 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     # Dropdown change handler
     def dropdown_changed(e):
         nonlocal selected_index, selected_chapter_index, current_q_index, question_id
+        for cid in list(cursor_containers.keys()):
+            stack.controls.remove(cursor_containers[cid])
+            del cursor_containers[cid]
+            del client_colors[cid]
         selected_chapter_index = int(chapter_dd.value.split()[-1])
         options_list.clear()
         for i in range(len(chapter_quizzes[selected_chapter_index])):
@@ -528,7 +531,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             pb.visible = False
             top_row.spacing = 68
         current_q_index = 0
-
+        print(chapter_quizzes)
         for i in chapter_quizzes[selected_chapter_index]:
             if int(i[3]) == selected_index and int(i[4][3:]) == selected_chapter_index:
                 quiz_name.value = i[1]
@@ -587,7 +590,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     def Add_Quiz(e):
         lvl = len(chapter_quizzes[selected_chapter_index]) + 1
         get_id = Add_QuizLVL(lvl, f"CHA{selected_chapter_index:02d}")
-        new_quiz = (f"QIZ{get_id:02d}", "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
+        new_quiz = (get_id, "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
         chapter_quizzes[selected_chapter_index].append(new_quiz)
 
         options_list.clear()
@@ -774,7 +777,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         chapter_snack = ft.SnackBar(ft.Text(f"A new chapter has been added", color="#FFFFFF",
                                             weight=ft.FontWeight.BOLD), duration=1500, bgcolor="#242323")
         quiz_id = Add_QuizLVL(1, chap_id)
-        chapter_quizzes[int(chap_id[3:])] = [(f"QIZ{quiz_id:02d}", "Quiz Name", "Description", 1, chap_id)]
+        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
 
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
@@ -845,7 +848,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         top_row.spacing = 68
         chap_id = Add_ChapterDB()
         quiz_id = Add_QuizLVL(1, chap_id)
-        chapter_quizzes[int(chap_id[3:])] = [(f"QIZ{quiz_id:02d}", "Quiz Name", "Description", 1, chap_id)]
+        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
         print(chapter_quizzes)
@@ -880,23 +883,27 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         ],
         alignment=ft.MainAxisAlignment.CENTER  # Center everything inside the Row
     )
+    stack = ft.Stack([
+        Hedr,
+        chapter_display,
+        # Cursors last (top visual layer)
+        *cursor_containers.values()
+    ], expand=True)
 
-    # Add main layout to page
-    # page.add(chapter_display)
+    def get_current_chapter_quiz():
+        """Returns tuple of (current_chapter, current_quiz)"""
+        nonlocal chapter_dd, dd
+        current_chapter = int(chapter_dd.value.split()[-1])
+        current_quiz = int(dd.value.split()[-1])
+        return current_chapter, current_quiz
 
-    # ✅ Call `update_column()` only AFTER the UI is loaded
-    def on_view_loaded(e):
-        if default_value:
-            update_column(options_list.index(default_value))
-
-    page.on_view_populated = on_view_loaded  # Run this after the page is loaded
-
+    # Start mouse tracking and websocket client
+    threading.Thread(target=lambda: asyncio.run(websocket_client(page, stack, get_current_chapter_quiz)), daemon=True).start()
     return ft.View(
         route="/edit_page",
         controls=[
+            stack,
             Admin.page.appbar,
-            Hedr,
-            chapter_display
         ],
         bgcolor="#514B4B",
     )
