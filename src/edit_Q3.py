@@ -140,7 +140,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         if chapter_id not in chapter_quizzes:
             chapter_quizzes[chapter_id] = []
         chapter_quizzes[chapter_id].append(quiz[i])
-
+    # (QuizID, QuizName, Question, lvl, ChapterID, IsDeleted?)
     # Create options for the dropdown
     options_list = []
     for i in range(len(chapter_quizzes[1])):
@@ -486,11 +486,9 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             title=ft.Text("Minimum 1 Question per Quiz!"),
             on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
         )
-        if selected_chapter_index == 1 and selected_index == 0 and len(questions) == 1:
-            page.open(dlg)
-            return
-
-        if len(chapter_quizzes[selected_chapter_index]) == 1 and len(questions) == 1:
+        print(chapter_quizzes[selected_chapter_index][0][0][3:])
+        first_quiz = int(chapter_quizzes[selected_chapter_index][0][0][3:])
+        if len(Retrieve_Question(first_quiz, "QuizID")) == 1 and int(quiz_id) == first_quiz:
             page.open(dlg)
             return
         confirm_dialog = ft.AlertDialog(
