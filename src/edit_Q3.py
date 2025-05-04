@@ -377,6 +377,15 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         nonlocal current_q_index
         current_q_index = questions.index(question)
         quiz_id = selected_index
+        dlg = ft.AlertDialog(
+            title=ft.Text("Minimum 1 Question per Quiz!"),
+            on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
+        )
+        print(chapter_quizzes[selected_chapter_index][0][0][3:])
+        first_quiz = int(chapter_quizzes[selected_chapter_index][0][0][3:])
+        if len(Retrieve_Question(first_quiz, "QuizID")) == 1 and int(quiz_id) == first_quiz:
+            page.open(dlg)
+            return
         confirm_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Confirm Delete"),
@@ -387,18 +396,6 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-        dlg = ft.AlertDialog(
-            title=ft.Text("Minimum 1 Question per Quiz!"),
-            on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
-        )
-        if selected_chapter_index == 1 and selected_index == 0 and len(questions) == 1:
-            page.open(dlg)
-            return
-
-        if len(chapter_quizzes[selected_chapter_index]) == 1 and len(questions) == 1:
-            page.open(dlg)
-            return
-
         original_question = Retrieve_Question(quiz_id, "Question")[current_q_index]
         original_options = Retrieve_Question(quiz_id, "Option1, Option2, Option3, Option4")[current_q_index]
         original_answer = Retrieve_Question(quiz_id, "CorrectAnswer")[current_q_index]
@@ -410,6 +407,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         page.dialog = confirm_dialog
         page.open(page.dialog)
         page.update()
+
 
     # Function to confirm deletion
     def confirm_delete(question):
@@ -587,7 +585,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
     def Add_Quiz(e):
         lvl = len(chapter_quizzes[selected_chapter_index]) + 1
         get_id = Add_QuizLVL(lvl, f"CHA{selected_chapter_index:02d}")
-        new_quiz = (f"QIZ{get_id:02d}", "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
+        new_quiz = (get_id, "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
         chapter_quizzes[selected_chapter_index].append(new_quiz)
 
         options_list.clear()
@@ -774,7 +772,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         chapter_snack = ft.SnackBar(ft.Text(f"A new chapter has been added", color="#FFFFFF",
                                             weight=ft.FontWeight.BOLD), duration=1500, bgcolor="#242323")
         quiz_id = Add_QuizLVL(1, chap_id)
-        chapter_quizzes[int(chap_id[3:])] = [(f"QIZ{quiz_id:02d}", "Quiz Name", "Description", 1, chap_id)]
+        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
 
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
@@ -845,7 +843,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         top_row.spacing = 68
         chap_id = Add_ChapterDB()
         quiz_id = Add_QuizLVL(1, chap_id)
-        chapter_quizzes[int(chap_id[3:])] = [(f"QIZ{quiz_id:02d}", "Quiz Name", "Description", 1, chap_id)]
+        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
         print(chapter_quizzes)

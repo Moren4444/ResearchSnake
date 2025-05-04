@@ -338,14 +338,16 @@ def Add_Question(selected_id, admin_name):
 
 
 def Add_QuizLVL(lvl, chapter):
-    query_id = "SELECT MAX(CAST(SUBSTRING(QuizID, 4, LEN(QuizID)) AS INT)) FROM Quiz"
+    query_id = f"SELECT QuizID FROM Quiz where ChapterID = '{chapter}' and IsDeleted = 1"
     cursor.execute(query_id)
-    result = cursor.fetchone()
-    print("QuizID: ", result[0])
-    if select(f"Select IsDeleted from Quiz where QuizID = '{generate_quiz_id(result[0])}'")[0][0]:
-        update_DB(f"Update Quiz set IsDeleted = 0 where QuizID = '{generate_quiz_id(result[0])}'")
-        cursor.commit()
-        return int(result[0])
+    check = cursor.fetchone()
+    if bool(check):
+        result = check[0]
+        print("QuizID: ", result)
+        if result and select(f"Select IsDeleted from Quiz where QuizID = '{result}'")[0][0]:
+            update_DB(f"Update Quiz set IsDeleted = 0 where QuizID = '{result}'")
+            cursor.commit()
+            return result
     else:
         query_id = "SELECT MAX(CAST(SUBSTRING(QuizID, 4, LEN(QuizID)) AS INT)) FROM Quiz"
         cursor.execute(query_id)
@@ -358,11 +360,12 @@ def Add_QuizLVL(lvl, chapter):
         print("CHAPTER", chapter)
         cursor.execute(query, generate_quiz_id(quiz_id + 1), "Quiz Name", "Description", lvl, chapter, 0)
         cursor.commit()
-        return quiz_id + 1
+        return f"QIZ{quiz_id + 1:02d}"
 
 
 def Delete_Chapter(chapter_index, quiz_ids):
     print(chapter_index)
+    print(quiz_ids)
     try:
         query = "Delete Chapter where ChapterID = ?"
         quiz_match_delete = "Delete Quiz where ChapterID = ?"
@@ -530,16 +533,11 @@ def Delete_Quiz(lvl):
 
 if __name__ == "__main__":
     # question = Retrieve_Question(1, "Question")
-    # result = Retrieve_Question(1, "Option1, Option2, Option3, Option4")
-    # for i in Select("QuizID", "Question"):
-    #     print(i)
-    # print(Select("QuizID", "Question"))
-    # Add_Question()
-    # print(question)
-    # print(Add_Question())
-    # print(Update_Database())
-    # print("Hai" if Select("QuizID", "Question", 2) else "Bye")
-    # print(select("Select * from Game_Session where StudentID = 'S0001'"))
-    print(pyodbc.drivers())
-
+    query_id = f"SELECT QuizID FROM Quiz where ChapterID = 'CHA09' and IsDeleted = 1"
+    cursor.execute(query_id)
+    check = cursor.fetchone()
+    if bool(check):
+        print(check)
+    else:
+        print("Bye")
     # select(f"Select Name from {[i for i in ['Student', 'Admin', 'Owner']]}")
