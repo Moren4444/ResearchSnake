@@ -1,4 +1,0 @@
-pygame
-flet
-pyodbc
-pillow
