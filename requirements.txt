@@ -1,6 +1,6 @@
 pygame
 flet
 pyodbc
-dotenv
 pillow
-cryptography
+websockets
+pyautogui
