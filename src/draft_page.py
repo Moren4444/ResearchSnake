@@ -6,6 +6,7 @@ from database import select, update_DB
 
 
 def draft_page(page: ft.Page, audio1, audio2):
+    page.theme_mode = "dark"
     page.bgcolor = "#343434"
     if os.path.exists("Quiz_draft2.json"):
         with open("Quiz_draft2.json") as file:

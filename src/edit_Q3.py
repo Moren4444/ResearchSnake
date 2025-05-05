@@ -115,6 +115,7 @@ async def websocket_client(page: ft.Page, stack: ft.Stack, get_current_chapter_q
 
 def main(page: ft.Page, role, audio1, audio2, admin_Name):
     page.title = "Edit Question"
+    page.theme_mode = "dark"
     # Database setup
     chapter, quiz = Chapter_Quiz()
     chapter_quizzes = {}
@@ -771,6 +772,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
                 update_column(int(chapter_quizzes[selected_chapter_index][0][0][3:]))
                 dd.update()
                 question_title.value = questions[0]
+                print(selected_index)
                 options = Retrieve_Question(selected_index + 1, "Option1, Option2, Option3, Option4")[0]
                 answer = Retrieve_Question(selected_index + 1, "CorrectAnswer")[0]
                 question_title.disabled = False
@@ -909,12 +911,14 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         if chapter_dd.value == f"Chapter {len(chapter_quizzes) + 1}":
             chapter_dd.value = "Chapter 1"
+            selected_chapter_index = 1
+            selected_index = 1
             quiz_name.value = chapter_quizzes[1][0][1]
             description.value = chapter_quizzes[1][0][2]
             update_column(int(chapter_quizzes[1][0][0][3:]))
             question_title.value = Retrieve_Question(1, "Question")[0]
             options = Retrieve_Question(1, "Option1, Option2, Option3, Option4")[0]
-            answer = Retrieve_Question(selected_index + 1, "CorrectAnswer")[0]
+            answer = Retrieve_Question(1, "CorrectAnswer")[0]
             for i in range(4):
                 option_fields[i].value = options[i]
                 option_fields[i].bgcolor = ft.colors.GREEN if i == (ord(answer) - ord('A')) else ft.colors.RED
@@ -951,7 +955,7 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
         top_row.spacing = 68
         chap_id = Add_ChapterDB()
         quiz_id = Add_QuizLVL(1, chap_id)
-        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id)]
+        chapter_quizzes[int(chap_id[3:])] = [(quiz_id, "Quiz Name", "Description", 1, chap_id), False]
         chapter_dd.options = [ft.dropdown.Option(f"Chapter {i + 1}") for i in range(len(chapter_quizzes))]
         chapter_dd.update()
         print(chapter_quizzes)

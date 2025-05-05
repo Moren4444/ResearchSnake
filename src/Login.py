@@ -26,7 +26,7 @@ def delete_login_credentials():
     update = load_login_credentials()
     update["username"] = ""
     update["password"] = ""
-    with open(resource_path("user_credentials.json"), "w") as file:
+    with open("user_credentials.json", "w") as file:
         json.dump(update, file)
 
 
@@ -35,7 +35,7 @@ def save_login_credentials(username: str, password: str):
     update = load_login_credentials()
     update["username"] = username
     update["password"] = password
-    with open(resource_path("user_credentials.json"), "w") as file:
+    with open("user_credentials.json", "w") as file:
         json.dump(update, file)
 
 
@@ -47,8 +47,8 @@ def hash_password(password: str) -> str:
 def load_login_credentials():
     """Load credentials from the JSON file."""
     try:
-        if os.path.exists(resource_path("user_credentials.json")):
-            with open(resource_path("user_credentials.json"), "r") as file:
+        if os.path.exists("user_credentials.json"):
+            with open("user_credentials.json", "r") as file:
                 return json.load(file)
         return {"username": "", "password": "", "img": ""}  # Return empty values if file doesn't exist
     except Exception as e:
@@ -65,6 +65,7 @@ countdown_event = Event()
 
 def main(page: ft.Page):
     page.title = "Login"
+    page.theme_mode = "dark"
     page.window.full_screen = True
     page.window.min_width = 1000
     page.window.min_height = 830
@@ -84,12 +85,6 @@ def main(page: ft.Page):
     page.bgcolor = "#343434"
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
-    # Check if running as a PyInstaller executable
-
-    # Get current system details
-    current_user = getpass.getuser()  # Get current username
-    current_hostname = platform.node()  # Get current device name
-    # dotenv_path = os.path.join(os.getenv("APPDATA"), "Owner Store", ".env")  # Get correct .env path
 
     background_path = resource_path("assets/Background_audio.mp3")
     audio1 = ft.Audio(
