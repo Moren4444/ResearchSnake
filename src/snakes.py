@@ -23,7 +23,7 @@ class Snake:
         self.resource_path = resource_path
 
         # Initialize snake positions
-        self.positions = [(x - i * (self.body_width * scale), y * scale) for i in range(self.body_count)]
+        self.positions = [(x - i * (self.body_width * self.scale), y * self.scale) for i in range(self.body_count)]
 
         # Load sprites
         self._load_sprites()
@@ -126,13 +126,13 @@ class Snake:
         # Calculate new head position
         self.new_head = list(self.positions[0])
         if self.direction == "up":
-            self.new_head[1] -= self.body_height * scale
+            self.new_head[1] -= int(self.body_height * scale)
         elif self.direction == "down":
-            self.new_head[1] += self.body_height * scale
+            self.new_head[1] += int(self.body_height * scale)
         elif self.direction == "left":
-            self.new_head[0] -= self.body_width * scale
+            self.new_head[0] -= int(self.body_height * scale)
         elif self.direction == "right":
-            self.new_head[0] += self.body_width * scale
+            self.new_head[0] += int(self.body_height * scale)
 
         # Check collision
         new_head_tuple = tuple(self.new_head)
@@ -220,7 +220,7 @@ class Game:
 
         elapsed = current_time - self.time_bar_start
         remaining = max(0, self.time_bar_duration - elapsed)
-        width = (remaining / self.time_bar_duration) * self.full_width
+        width = (remaining / self.time_bar_duration) * self.full_width * 1.25
 
         # Color logic remains the same
         if remaining < 2000:
@@ -231,7 +231,7 @@ class Game:
         else:
             color = (16, 196, 109)
 
-        pygame.draw.rect(self.screen, color, (29 * 2, 27 * 2, width, 10.85 * 2),
+        pygame.draw.rect(self.screen, color, (29 * 2 * 1.25, 27 * 2 * 1.25, width, 10.85 * 2 * 1.25),
                          border_top_left_radius=5, border_top_right_radius=5)
 
         # Return whether time has run out

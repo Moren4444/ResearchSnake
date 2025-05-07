@@ -5,6 +5,7 @@ from admin import AdminPage
 
 
 def account_management(page: ft.Page, role, audio1, audio2):
+    page.theme_mode = "dark"
     if role == "Owner":
         users = admin_profile_info()
     elif role == "Admin":
