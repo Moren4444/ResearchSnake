@@ -1,6 +1,0 @@
-pygame
-flet
-pyodbc
-pillow
-websockets
-pyautogui
