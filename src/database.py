@@ -14,22 +14,26 @@ chosen_driver = 'ODBC Driver 17 for SQL Server' if 'ODBC Driver 17 for SQL Serve
                                                                                                    'SQL Server')
 connection_string = (
     f"DRIVER={chosen_driver};"
-    "SERVER=26.71.121.211;"
+    "SERVER=tcp:researchsnake.database.windows.net,1433;"
     "DATABASE=ResearchSnake;"
-    f"UID=sa;"  # Replace with your SQL username
-    f"PWD=43567s9205;"  # Replace with your SQL password
-    f"Network=dbmssocn;"
+    "UID=SnakeAdmin;"
+    "PWD=@Admin123;"
+    "Encrypt=yes;"
+    "TrustServerCertificate=no;"
+    "Connection Timeout=30;"
 )
 
 # print(pyodbc.drivers())  # List available ODBC drivers
 conn = pyodbc.connect(connection_string)
 cursor = conn.cursor()
 
-if os.path.exists("Quiz_draft2.json"):
-    with open("Quiz_draft2.json") as file:
-        chapter_quizQ = json.load(file)
-else:
-    chapter_quizQ = {}
+
+def load_draft():
+    if os.path.exists("Quiz_draft2.json"):
+        with open("Quiz_draft2.json", "r") as file:
+            return json.load(file)
+    else:
+        return {}
 
 
 def generate_quiz_id(selected_id):
@@ -395,10 +399,10 @@ def Delete_Chapter(chapter_index, quiz_ids):
 def Add_ChapterDB():
     query_id = "SELECT MAX(CAST(SUBSTRING(ChapterID, 4, LEN(ChapterID)) AS INT)) FROM Chapter"
     cursor.execute(query_id)
-    result = cursor.fetchone()
-    print("ChapID", result[0])
-    print(select(f"Select IsDeleted from Chapter where ChapterID = '{generate_chapter_id(result[0])}'")[0][0])
-    if select(f"Select IsDeleted from Chapter where ChapterID = '{generate_chapter_id(result[0])}'")[0][0]:
+    check = cursor.fetchone() if bool(cursor.fetchone()) else 0
+    result = check
+    # print("ChapID", result[0])
+    if result and select(f"Select IsDeleted from Chapter where ChapterID = '{generate_chapter_id(result[0])}'")[0][0]:
         update_DB(f"Update Chapter set IsDeleted = 0 where ChapterID = '{generate_chapter_id(result[0])}'")
         cursor.commit()
         return f"CHA{int(result[0]):02d}"
@@ -510,7 +514,8 @@ def Delete_Question(quiz_id, questionID, filters):
         cursor.execute(query, generate_quiz_id(quiz_id), questionID)
     cursor.commit()
     print("In Database: ", filters[0], filters[1])
-    print(chapter_quizQ)
+    chapter_quizQ = load_draft()
+    print("In Database: ", chapter_quizQ)
     if os.path.exists("Quiz_draft2.json"):
         try:
             if len(chapter_quizQ[(filters[0])][filters[1]]) == 1:
@@ -518,6 +523,7 @@ def Delete_Question(quiz_id, questionID, filters):
                 os.remove("Quiz_draft2.json")
             else:
                 try:
+
                     chapter_quizQ[filters[0]][filters[1]].pop(str(questionID))
                     with open("Quiz_draft2.json", "w") as File:
                         json.dump(chapter_quizQ, File, indent=4)
@@ -533,11 +539,8 @@ def Delete_Quiz(lvl):
 
 if __name__ == "__main__":
     # question = Retrieve_Question(1, "Question")
-    query_id = f"SELECT QuizID FROM Quiz where ChapterID = 'CHA09' and IsDeleted = 1"
+    query_id = f"SELECT * FROM chapter"
     cursor.execute(query_id)
-    check = cursor.fetchone()
-    if bool(check):
-        print(check)
-    else:
-        print("Bye")
+    see = cursor.fetchall()
+    print(see)
     # select(f"Select Name from {[i for i in ['Student', 'Admin', 'Owner']]}")

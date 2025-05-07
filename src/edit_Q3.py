@@ -10,6 +10,7 @@ from admin import AdminPage
 
 def main(page: ft.Page, role, audio1, audio2, admin_Name):
     page.title = "Edit Question"
+    page.theme_mode = "dark"
     # Database setup
     chapter, quiz = Chapter_Quiz()
     chapter_quizzes = {}

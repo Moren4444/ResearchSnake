@@ -73,6 +73,7 @@ confirm_password = ft.Text("", weight=ft.FontWeight.BOLD, size=15, color="red", 
 
 
 def signin_view(page, click):
+    page.theme_mode = "dark"
     for error_label in [username_error, email_error, password_empty, confirm_password]:
         error_label.value = ""
     return ft.View(

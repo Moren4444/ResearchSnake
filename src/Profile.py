@@ -8,6 +8,7 @@ from admin import AdminPage
 
 def profile_management(page: ft.Page, role, audio1, audio2):
     page.scroll = "auto"
+    page.theme_mode = "dark"
     page.vertical_alignment = "stretch"
     page.horizontal_alignment = "stretch"
     user_id = page.session.get("user_id")
