@@ -122,6 +122,9 @@ def new_user(page: ft.Page, role, audio1, audio2):
                     content=ft.Text("The user is added successfully!", color="white"),
                     bgcolor="green"
                 )
+                page.open(page.snack_bar)
+                page.update()
+                page.go("/account_management")
             elif role == "Admin":
                 if int(level) >= 5:
                     page.snack_bar = ft.SnackBar(
