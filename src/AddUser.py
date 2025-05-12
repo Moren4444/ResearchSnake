@@ -65,10 +65,7 @@ def new_user(page: ft.Page, role, audio1, audio2):
 
         current_dt = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        if role == "Owner":
-            username = "@" + username_field.value.strip()
-        elif role == "Admin":
-            username = username_field.value.strip()
+        username = username_field.value.strip()
 
         email = email_field.value.strip() + "@gmail.com"
 
@@ -90,28 +87,15 @@ def new_user(page: ft.Page, role, audio1, audio2):
                 bgcolor="red",
                 duration=2000,
             )
-
             page.open(page.snack_bar)
             page.update()
             return
 
-        # Check for existing users
-        # existing_users = user_info(role)
-        # for user in existing_users:
-        #     if username == user[2]:
-        #         page.snack_bar = ft.SnackBar(
-        #             content=ft.Text("Username already exists!", color="white"),
-        #             bgcolor="red",
-        #             duration=2000,
-        #         )
-        #         page.open(page.snack_bar)
-        #         page.update()
-        #         return
-        #     elif email == user[3]:
-        #
-        #         return
+        if role == "Admin":
+            if not level:
+                level = "1"
 
-        # Check if username or email already exists
+
         redundancy = check_existing(role, username, email)
 
         if not redundancy:
@@ -122,22 +106,39 @@ def new_user(page: ft.Page, role, audio1, audio2):
             )
             page.open(page.snack_bar)
             page.update()
+        elif re.search(r'[^a-zA-Z0-9]', username):
+            page.snack_bar = ft.SnackBar(
+                content=ft.Text("Special characters not allowed!", color="white"),
+                bgcolor="red",
+                duration=2000,
+            )
+            page.open(page.snack_bar)
+            page.update()
         else:
             if role == "Owner":
+                username = "@" + username_field.value.strip()
                 add_new_admin(username, email, hashed_password, registeredDate, lastLogin)
                 page.snack_bar = ft.SnackBar(
                     content=ft.Text("The user is added successfully!", color="white"),
                     bgcolor="green"
                 )
             elif role == "Admin":
-                if add_new_student(username, email, hashed_password, level, registeredDate, lastLogin):
+                if int(level) >= 5:
+                    page.snack_bar = ft.SnackBar(
+                        content=ft.Text("Level should be lower than 5!", color="white"),
+                        bgcolor="red",
+                        duration=2000,
+                    )
+                    page.open(page.snack_bar)
+                    page.update()
+                elif add_new_student(username, email, hashed_password, level, registeredDate, lastLogin):
                     page.snack_bar = ft.SnackBar(
                         content=ft.Text("The user is added successfully!", color="white"),
                         bgcolor="green"
                     )
-            page.open(page.snack_bar)
-            page.update()
-            page.go("/account_management")
+                    page.open(page.snack_bar)
+                    page.update()
+                    page.go("/account_management")
 
     # Build the column controls dynamically
     column_controls = [
