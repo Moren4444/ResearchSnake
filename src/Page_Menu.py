@@ -1,5 +1,5 @@
 import pygame
-from Result_2 import wrap_text_word_based
+from Result import wrap_text_word_based
 import sys
 from Game_page import Game_page
 from Resouce import Background
@@ -100,8 +100,6 @@ def page_menu(player_info, chapter_info, return_to_menu_callback, resource_path,
             pygame.quit()
             # subprocess.run([sys.executable, "Menu.py", str(player_info)])
             sys.exit()
-        position = smaller_font.render(str(mouse), True, (255, 255, 255))
-        screen.blit(position, (1100, 0))
         screen.blit(arrow(push=Push)[0], (50, 30))
 
         screen.blit(Chapter, (58 * scale, 30 * scale))

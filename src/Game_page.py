@@ -2,7 +2,7 @@ import pygame
 from snakes import Game
 from Resouce import Buttons
 from database import Retrieve_Question, update, resultDB
-from Result_2 import result
+from Result import result
 from datetime import datetime
 # from Menu import Menu
 

@@ -1,6 +1,6 @@
 import pygame
 from database import Chapter_Quiz, Select, select
-from Result_2 import wrap_text_word_based
+from Result import wrap_text_word_based
 import sys
 import os
 from Page_Menu import page_menu
@@ -8,8 +8,6 @@ from Resouce import Profile, Keyboard_Writing, RedPanda, Background, resource_pa
 
 
 def return_to_menu(player):
-    print("Return to menu")
-    print(player)
     Menu(player)
 
 
@@ -71,7 +69,6 @@ def Menu(player_info):
             if chapter_id not in chapter_quizzes:
                 chapter_quizzes[chapter_id] = []
             chapter_quizzes[chapter_id].append(quiz[i])
-        print(chapter_quizzes)
         # Process each chapter
         # for chapter_index, (chapter_id, quizzes) in enumerate(chapter_quizzes.items()):
         #     print(f"Chapter {chapter_id}")
@@ -101,7 +98,6 @@ def Menu(player_info):
         #         list_of_quiz.append(rect)
         #         all_testing_data[(f"Chapter {chapter_id}", j[0])] = j[1]
 
-        print(quiz)
         quiz_level = 0
         # Main loop
         menu_open = False
@@ -137,8 +133,6 @@ def Menu(player_info):
             # screen.blit(background_scale, (0, 0))
             background.play(screen)
             panda_spirit.draw(screen)
-            loc = font(30).render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
-            screen.blit(loc, (1100, 0))
             right = Arrow("right", (588, 772), push=Push_r)
             left = Arrow("left", (75, 772), push=Push_l)
 
@@ -256,16 +250,13 @@ def Menu(player_info):
                                               if g_idx == global_idx][0]
                                 if (global_idx + 1) > player_level and chapter_id <= 9:
                                     # alert = True  # Show a "Quiz is locked" message
-                                    print(f"Quiz {global_idx + 1} is locked")
                                     break  # Skip further processing
 
                                 # Existing logic for available questions
-                                print(f"Quiz {global_idx + 1} clicked!")
                                 quiz_level = global_idx
-                                print(quiz_level)
                                 try:
-                                    if select(f"Select QuizID from Question where QuizID = '{Select()[quiz_level][1]}'"):
-                                        print("Yes: ", Select()[quiz_level][1])
+                                    if select(
+                                            f"Select QuizID from Question where QuizID = '{Select()[quiz_level][1]}'"):
                                         char_index_title = 0
                                         char_index_description = 0
                                         menu_open = True
@@ -295,7 +286,8 @@ def Menu(player_info):
                             if event.y > 0:  # Scroll up
                                 profile.scroll_offset = max(0, profile.scroll_offset - profile.y_offset[0])
                             elif event.y < 0:  # Scroll down
-                                profile.scroll_offset = min(profile.max_scroll, profile.scroll_offset + profile.y_offset[0])
+                                profile.scroll_offset = min(profile.max_scroll,
+                                                            profile.scroll_offset + profile.y_offset[0])
                         list_of_visible_quizzes.clear()
                     except Exception as e:
                         print("Event: ", e)
@@ -317,8 +309,9 @@ def Menu(player_info):
                     # Animate the description
                     description = level_click[2][:char_index_description]
                     description_wrapped = wrap_text_word_based(description, 340,
-                                                               pygame.font.Font(resource_path("assets/PeaberryBase.ttf"),
-                                                                                30))
+                                                               pygame.font.Font(
+                                                                   resource_path("assets/PeaberryBase.ttf"),
+                                                                   30))
                     screen.blit(description_title, (1000, 254))
                     for i, line in enumerate(description_wrapped):
                         description_surface = font(33).render(line, True, (0, 0, 0))
@@ -333,7 +326,7 @@ def Menu(player_info):
                         if char_index_description < len(level_click[2]):
                             char_index_description += 1
                     pygame.draw.rect(screen, (150, 188, 219), play_button, border_radius=5)
-                    screen.blit(play, (1131 + (210 - play.get_width())/2, 733 + (100 - play.get_height())/2))
+                    screen.blit(play, (1131 + (210 - play.get_width()) / 2, 733 + (100 - play.get_height()) / 2))
                 except Exception as e:
                     print("WHAT: ", e)
 
@@ -358,12 +351,16 @@ def Menu(player_info):
                 elif Logout:
                     profile.open_profile = [False, False]
                     pygame.draw.rect(screen, (100, 100, 100), ((screen.get_width() - 480) / 2,
-                                                               (screen.get_height() - 200) / 2, 480, 200), border_radius=10)
+                                                               (screen.get_height() - 200) / 2, 480, 200),
+                                     border_radius=10)
                     screen.blit(Quit_Text, ((screen.get_width() - Quit_Text.get_width()) / 2,
                                             (screen.get_height() - Quit_Text.get_height()) / 2))
                 else:
-                    pygame.draw.rect(screen, (100, 100, 100), (480, 350, 320, 100), border_radius=10)
-                    screen.blit(question_unavailable, (492, 390))
+                    pygame.draw.rect(screen, (100, 100, 100), ((screen.get_width() - 320*1.25) / 2,
+                                                               (screen.get_height() - 100*1.25) / 2, 320*1.25, 100*1.25),
+                                     border_radius=10)
+                    screen.blit(question_unavailable, ((screen.get_width() - question_unavailable.get_width())/2,
+                                                       (screen.get_height() - question_unavailable.get_height())/2))
 
             pygame.display.update()
     except Exception as e:
