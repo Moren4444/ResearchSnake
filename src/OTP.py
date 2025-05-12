@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 
 # Configure your authorized Gmail account
 EMAIL_ADDRESS = "researchsnake.com@gmail.com"
-EMAIL_PASSWORD = "ghwk irsq hyot ottn"  # Use App Password for security
+EMAIL_PASSWORD = "oelx quea zbdh jugv"  # Use App Password for security
 
 
 def generate_otp():

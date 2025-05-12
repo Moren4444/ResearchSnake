@@ -1,15 +1,18 @@
 import platform
+import subprocess
+import sys
 import threading
 from threading import Event
 import time
 
 import flet as ft
+
 from database import user_info, last_Update, Chapter_Quiz, Add_ChapterDB, Add_QuizLVL, Add_Question, update_DB
 import SignIn
 import os
 from Menu import Menu
 import json
-import edit_Q3
+import edit_Q
 import AccountManagement
 import Profile
 import AddUser
@@ -448,7 +451,7 @@ def main(page: ft.Page):
             page.views.append(draft_page.draft_page(page, audio1, audio2))
         elif page.route == "/edit_page":
             page.overlay.clear()
-            page.views.append(edit_Q3.main(page, role, audio1, audio2, admin_name))
+            page.views.append(edit_Q.main(page, role, audio1, audio2, admin_name))
         elif page.route == "/profile_management":
             page.overlay.clear()
             page.views.append(Profile.profile_management(page, role, audio1, audio2))

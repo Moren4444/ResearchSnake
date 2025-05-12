@@ -2,7 +2,7 @@ import pygame
 from snakes import Game
 from Resouce import Buttons
 from database import Retrieve_Question, update, resultDB
-from Result_2 import result
+from Result import result
 from datetime import datetime
 # from Menu import Menu
 
@@ -27,6 +27,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     clock = pygame.time.Clock()
     is_alive = True
     game = Game(800 * scale, 412 * scale, screen, 1, 10000, resource_path, difficulties)
+
     option = Buttons(screen, resource_path)
     open_setting = False
     game_over = False
@@ -82,6 +83,7 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
     death_sound_played = False
     set_str = datetime.now().strftime('%H:%M:%S')
     set_time = datetime.strptime(set_str, "%H:%M:%S")  # convert to datetime
+    game.time_bar_start = pygame.time.get_ticks()
     try:
         while running:
             screen.fill((50, 50, 50))
@@ -129,12 +131,12 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                             try:
                                 print(f"checking: {quiz_level}, {player_info[4]}")
                                 print(player_info[0])
-                                # Update the player's level in the database
                                 if quiz_level >= int(player_info[4]) and int(chapter_info[-2][3:]) != 10:
                                     update("[Student]", "[Level]", int(player_info[4]) + 1,
                                            player_info[0], "Student")
                                 resultDB(player_info[0], quiz_level, chapter_info, user_answer, difficulties, set_time)
                                 result(chapter_info, user_answer, resource_path, return_menu, player_info[0])
+                                # Update the player's level in the database
                                 pygame.mixer.music.stop()
                             except Exception as e:
                                 print("Error: ", e)
@@ -291,7 +293,6 @@ def Game_page(player_info, difficulties, return_menu, resource_path, chapter_inf
                                                         , scale * 650, scale * 300))
                 screen.blit(game_over_text, ((screen.get_width() - game_over_text.get_width()) / 2, scale * 365))
                 screen.blit(Restart_s, ((screen.get_width() - Restart_s.get_width()) / 2, scale * 450))
-                # print(int(len(answer) / 2) <= user_answer.count(True))
                 if int(len(answer) / 2) <= user_answer.count(True):
                     player_proceed = True
                 if player_proceed:

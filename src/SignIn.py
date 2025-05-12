@@ -3,9 +3,7 @@ from datetime import datetime
 import flet as ft
 from database import user_info, insert, get_last_user_Id
 import os
-import subprocess
 from Menu import Menu
-import sys
 import hashlib
 import re
 from Resouce import resource_path

@@ -693,6 +693,13 @@ def main(page: ft.Page, role, audio1, audio2, admin_Name):
 
     def Add_Quiz(e):
         lvl = len(chapter_quizzes[selected_chapter_index]) + 1
+        prompt = ft.AlertDialog(
+                title=ft.Text("Maximum 5 quiz!"),
+                on_dismiss=lambda e: page.add(ft.Text("Non-modal dialog dismissed")),
+            )
+        if lvl >= 6:
+            page.open(prompt)
+            return
         get_id = Add_QuizLVL(lvl, f"CHA{selected_chapter_index:02d}")
         new_quiz = (get_id, "Quiz Name", "Description", lvl, f"CHA{selected_chapter_index:02d}")
         chapter_quizzes[selected_chapter_index].append(new_quiz)

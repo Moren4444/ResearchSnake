@@ -124,8 +124,6 @@ def result(chapter_info, user_answer, resource_path, return_menu, player_info):
                     Push_r = ""
                 elif left[1].collidepoint(event.pos):
                     Push_l = ""
-        loc = font.render(str(pygame.mouse.get_pos()), True, (255, 255, 255))
-        screen.blit(loc, (1100, 0))
         pygame.draw.rect(screen, (39, 70, 68), (100 * scale, 40 * scale,
                                                 873 * scale, 698 * scale), border_radius=7)
         for i in range(start_idx, end_idx):
